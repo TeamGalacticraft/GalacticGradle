@@ -1,20 +1,44 @@
-package dev.galacticraft.gradle.internal;
+/*
+ * This file is part of GalacticGradle, licensed under the MIT License (MIT).
+ *
+ * Copyright (c) TeamGalacticraft <https://galacticraft.net>
+ * Copyright (c) contributors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+package net.galacticraft.gradle.common;
 
 import java.util.Objects;
 
 public class Version implements Comparable<Version> {
 
-	private final String   originalValue;
-	private final String   value;
-	private final Integer  major;
-	private final Integer  minor;
-	private final Integer  patch;
+	private final String originalValue;
+	private final String value;
+	private final Integer major;
+	private final Integer minor;
+	private final Integer patch;
 	private final String[] suffixTokens;
-	private final String   build;
+	private final String build;
 	private final VersionType type;
 	
-	public Version() {
-		this(null, VersionType.LOOSE);
+	public static Version set(String version) {
+		return new Version(version);
 	}
 
 	public Version(String value) {
@@ -23,20 +47,19 @@ public class Version implements Comparable<Version> {
 
 	public Version(String value, VersionType type) {
 		this.originalValue = value;
-		this.type          = type;
-		value              = value.trim();
+		this.type = type;
+		value = value.trim();
 
 		this.value = value;
 		String[] tokens;
 
 		if (hasPreRelease(value)) {
 			tokens = value.split("-", 2);
-		}
-		else {
+		} else {
 			tokens = new String[] { value };
 		}
 
-		String  build = null;
+		String build = null;
 		Integer minor = null;
 		Integer patch = null;
 		try {
@@ -51,42 +74,35 @@ public class Version implements Comparable<Version> {
 				if (tmp.length == 2) {
 					build = tmp[1];
 				}
-			}
-			else {
+			} else {
 				mainTokens = tokens[0].split("\\.");
 			}
 
 			try {
 				this.major = Integer.valueOf(mainTokens[0]);
-			}
-			catch (NumberFormatException e) {
+			} catch (NumberFormatException e) {
 				throw new VersionException("Invalid version (no major version): " + value);
-			}
-			catch (IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {
 				throw new VersionException("Invalid version (no major version): " + value);
 			}
 
 			try {
 				minor = Integer.valueOf(mainTokens[1]);
-			}
-			catch (IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {
 				if (type == VersionType.STRICT) {
 					throw new VersionException("Invalid version (no minor version): " + value);
 				}
 			}
 			try {
 				patch = Integer.valueOf(mainTokens[2]);
-			}
-			catch (IndexOutOfBoundsException e) {
+			} catch (IndexOutOfBoundsException e) {
 				if (type == VersionType.STRICT) {
 					throw new VersionException("Invalid version (no patch version): " + value);
 				}
 			}
-		}
-		catch (NumberFormatException e) {
+		} catch (NumberFormatException e) {
 			throw new VersionException("The version is invalid: " + value);
-		}
-		catch (IndexOutOfBoundsException e) {
+		} catch (IndexOutOfBoundsException e) {
 			throw new VersionException("The version is invalid: " + value);
 		}
 		this.minor = minor;
@@ -101,13 +117,12 @@ public class Version implements Comparable<Version> {
 			String[] tmp = tokens[1].split("\\+");
 			if (tmp.length == 2) {
 				suffix = tmp[0].split("\\.");
-				build  = tmp[1];
-			}
-			else {
+				build = tmp[1];
+			} else {
 				suffix = tokens[1].split("\\.");
 			}
+		} catch (IndexOutOfBoundsException ignored) {
 		}
-		catch (IndexOutOfBoundsException ignored) {}
 		this.suffixTokens = suffix;
 
 		this.build = build;
@@ -115,7 +130,7 @@ public class Version implements Comparable<Version> {
 		this.validate(type);
 	}
 
-	private void validate (VersionType type) {
+	private void validate(VersionType type) {
 		if (this.minor == null && type == VersionType.STRICT) {
 			throw new VersionException("Invalid version (no minor version): " + value);
 		}
@@ -123,10 +138,14 @@ public class Version implements Comparable<Version> {
 			throw new VersionException("Invalid version (no patch version): " + value);
 		}
 	}
+	
+	public boolean isSnapshotVersion(String version) {
+		return value.endsWith("SNAPSHOT") || value.endsWith("snapshot");
+	}
 
-	private boolean hasPreRelease (String version) {
+	private boolean hasPreRelease(String version) {
 
-		int firstIndexOfPlus   = value.indexOf("+");
+		int firstIndexOfPlus = value.indexOf("+");
 		int firstIndexOfHyphen = value.indexOf("-");
 
 		if (firstIndexOfHyphen == -1) {
@@ -143,7 +162,7 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return true if the current version is greater than the provided version
 	 */
-	public boolean isGreaterThan (String version) {
+	public boolean isGreaterThan(String version) {
 		return this.isGreaterThan(new Version(version, this.getType()));
 	}
 
@@ -154,7 +173,7 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return true if the current version is greater than the provided version
 	 */
-	public boolean isGreaterThan (Version version) {
+	public boolean isGreaterThan(Version version) {
 		// Compare the main part
 		if (this.getMajor() > version.getMajor())
 			return true;
@@ -192,8 +211,7 @@ public class Version implements Comparable<Version> {
 				int t1 = Integer.valueOf(tokens1[i]);
 				int t2 = Integer.valueOf(tokens2[i]);
 				cmp = t1 - t2;
-			}
-			catch (NumberFormatException e) {
+			} catch (NumberFormatException e) {
 				// Else, do a string comparison
 				cmp = tokens1[i].compareToIgnoreCase(tokens2[i]);
 			}
@@ -213,9 +231,10 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @param version the version to compare
 	 *
-	 * @return true if the current version is greater than or equal to the provided version
+	 * @return true if the current version is greater than or equal to the provided
+	 *         version
 	 */
-	public boolean isGreaterThanOrEqualTo (String version) {
+	public boolean isGreaterThanOrEqualTo(String version) {
 		return this.isGreaterThanOrEqualTo(new Version(version, this.type));
 	}
 
@@ -224,9 +243,10 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @param version the version to compare
 	 *
-	 * @return true if the current version is greater than or equal to the provided version
+	 * @return true if the current version is greater than or equal to the provided
+	 *         version
 	 */
-	public boolean isGreaterThanOrEqualTo (Version version) {
+	public boolean isGreaterThanOrEqualTo(Version version) {
 		return this.isGreaterThan(version) || this.isEquivalentTo(version);
 	}
 
@@ -237,7 +257,7 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return true if the current version is lower than the provided version
 	 */
-	public boolean isLowerThan (String version) {
+	public boolean isLowerThan(String version) {
 		return this.isLowerThan(new Version(version, this.type));
 	}
 
@@ -248,7 +268,7 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return true if the current version is lower than the provided version
 	 */
-	public boolean isLowerThan (Version version) {
+	public boolean isLowerThan(Version version) {
 		return !this.isGreaterThan(version) && !this.isEquivalentTo(version);
 	}
 
@@ -257,9 +277,10 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @param version the version to compare
 	 *
-	 * @return true if the current version is lower than or equal to the provided version
+	 * @return true if the current version is lower than or equal to the provided
+	 *         version
 	 */
-	public boolean isLowerThanOrEqualTo (String version) {
+	public boolean isLowerThanOrEqualTo(String version) {
 		return this.isLowerThanOrEqualTo(new Version(version, this.type));
 	}
 
@@ -268,9 +289,10 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @param version the version to compare
 	 *
-	 * @return true if the current version is lower than or equal to the provided version
+	 * @return true if the current version is lower than or equal to the provided
+	 *         version
 	 */
-	public boolean isLowerThanOrEqualTo (Version version) {
+	public boolean isLowerThanOrEqualTo(Version version) {
 		return !this.isGreaterThan(version);
 	}
 
@@ -279,20 +301,23 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @param version the version to compare
 	 *
-	 * @return true if the current version equals the provided version (build excluded)
+	 * @return true if the current version equals the provided version (build
+	 *         excluded)
 	 */
-	public boolean isEquivalentTo (String version) {
+	public boolean isEquivalentTo(String version) {
 		return this.isEquivalentTo(new Version(version, this.type));
 	}
 
 	/**
-	 * Checks if the version equals another version, without taking the build into account.
+	 * Checks if the version equals another version, without taking the build into
+	 * account.
 	 *
 	 * @param version the version to compare
 	 *
-	 * @return true if the current version equals the provided version (build excluded)
+	 * @return true if the current version equals the provided version (build
+	 *         excluded)
 	 */
-	public boolean isEquivalentTo (Version version) {
+	public boolean isEquivalentTo(Version version) {
 		// Get versions without build
 		Version sem1 = this.getBuild() == null ? this : new Version(this.getValue().replace("+" + this.getBuild(), ""));
 		Version sem2 = version.getBuild() == null ? version
@@ -308,7 +333,7 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return true if the current version equals the provided version
 	 */
-	public boolean isEqualTo (String version) {
+	public boolean isEqualTo(String version) {
 		return this.isEqualTo(new Version(version, this.type));
 	}
 
@@ -319,17 +344,17 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return true if the current version equals the provided version
 	 */
-	public boolean isEqualTo (Version version) {
+	public boolean isEqualTo(Version version) {
 		return this.equals(version);
 	}
 
 	/**
-	 * Determines if the current version is stable or not.
-	 * Stable version have a major version number strictly positive and no suffix tokens.
+	 * Determines if the current version is stable or not. Stable version have a
+	 * major version number strictly positive and no suffix tokens.
 	 *
 	 * @return true if the current version is stable
 	 */
-	public boolean isStable () {
+	public boolean isStable() {
 		return (this.getMajor() != null && this.getMajor() > 0)
 				&& (this.getSuffixTokens() == null || this.getSuffixTokens().length == 0);
 	}
@@ -341,20 +366,20 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return the greatest difference
 	 */
-	public GenericVersionDiff diff (String version) {
+	public GenericVersionDiff diff(String version) {
 		return this.diff(new Version(version, this.type));
 	}
 
 	/**
-	 * Returns the greatest difference between 2 versions.
-	 * For example, if the current version is "1.2.3" and compared version is "1.3.0", the biggest difference
-	 * is the 'MINOR' number.
+	 * Returns the greatest difference between 2 versions. For example, if the
+	 * current version is "1.2.3" and compared version is "1.3.0", the biggest
+	 * difference is the 'MINOR' number.
 	 *
 	 * @param version the version to compare
 	 *
 	 * @return the greatest difference
 	 */
-	public GenericVersionDiff diff (Version version) {
+	public GenericVersionDiff diff(Version version) {
 		if (!Objects.equals(this.major, version.getMajor()))
 			return GenericVersionDiff.MAJOR;
 		if (!Objects.equals(this.minor, version.getMinor()))
@@ -368,7 +393,7 @@ public class Version implements Comparable<Version> {
 		return GenericVersionDiff.NONE;
 	}
 
-	private boolean areSameSuffixes (String[] suffixTokens) {
+	private boolean areSameSuffixes(String[] suffixTokens) {
 		if (this.suffixTokens == null && suffixTokens == null)
 			return true;
 		else if (this.suffixTokens == null || suffixTokens == null)
@@ -382,37 +407,37 @@ public class Version implements Comparable<Version> {
 		return true;
 	}
 
-	public Version toStrict () {
+	public Version toStrict() {
 		Integer minor = this.minor != null ? this.minor : 0;
 		Integer patch = this.patch != null ? this.patch : 0;
 		return Version.create(VersionType.STRICT, this.major, minor, patch, this.suffixTokens, this.build);
 	}
 
-	public Version withIncMajor () {
+	public Version withIncMajor() {
 		return this.withIncMajor(1);
 	}
 
-	public Version withIncMajor (int increment) {
+	public Version withIncMajor(int increment) {
 		return this.withInc(increment, 0, 0);
 	}
 
-	public Version withIncMinor () {
+	public Version withIncMinor() {
 		return this.withIncMinor(1);
 	}
 
-	public Version withIncMinor (int increment) {
+	public Version withIncMinor(int increment) {
 		return this.withInc(0, increment, 0);
 	}
 
-	public Version withIncPatch () {
+	public Version withIncPatch() {
 		return this.withIncPatch(1);
 	}
 
-	public Version withIncPatch (int increment) {
+	public Version withIncPatch(int increment) {
 		return this.withInc(0, 0, increment);
 	}
 
-	private Version withInc (int majorInc, int minorInc, int patchInc) {
+	private Version withInc(int majorInc, int minorInc, int patchInc) {
 		Integer minor = this.minor;
 		Integer patch = this.patch;
 		if (this.minor != null) {
@@ -424,53 +449,54 @@ public class Version implements Comparable<Version> {
 		return with(this.major + majorInc, minor, patch, true, true);
 	}
 
-	public Version withClearedSuffix () {
+	public Version withClearedSuffix() {
 		return with(this.major, this.minor, this.patch, false, true);
 	}
 
-	public Version withClearedBuild () {
+	public Version withClearedBuild() {
 		return with(this.major, this.minor, this.patch, true, false);
 	}
 
-	public Version withClearedSuffixAndBuild () {
+	public Version withClearedSuffixAndBuild() {
 		return with(this.major, this.minor, this.patch, false, false);
 	}
 
-	public Version withSuffix (String suffix) {
+	public Version withSuffix(String suffix) {
 		return with(this.major, this.minor, this.patch, suffix.split("\\."), this.build);
 	}
 
-	public Version withBuild (String build) {
+	public Version withBuild(String build) {
 		return with(this.major, this.minor, this.patch, this.suffixTokens, build);
 	}
 
-	public Version nextMajor () {
+	public Version nextMajor() {
 		return with(this.major + 1, 0, 0, false, false);
 	}
 
-	public Version nextMinor () {
+	public Version nextMinor() {
 		return with(this.major, this.minor + 1, 0, false, false);
 	}
 
-	public Version nextPatch () {
+	public Version nextPatch() {
 		return with(this.major, this.minor, this.patch + 1, false, false);
 	}
 
-	private Version with (int major, Integer minor, Integer patch, boolean suffix, boolean build) {
+	private Version with(int major, Integer minor, Integer patch, boolean suffix, boolean build) {
 		minor = this.minor != null ? minor : null;
 		patch = this.patch != null ? patch : null;
-		String   buildStr     = build ? this.build : null;
+		String buildStr = build ? this.build : null;
 		String[] suffixTokens = suffix ? this.suffixTokens : null;
 		return Version.create(this.type, major, minor, patch, suffixTokens, buildStr);
 	}
 
-	private Version with (int major, Integer minor, Integer patch, String[] suffixTokens, String build) {
+	private Version with(int major, Integer minor, Integer patch, String[] suffixTokens, String build) {
 		minor = this.minor != null ? minor : null;
 		patch = this.patch != null ? patch : null;
 		return Version.create(this.type, major, minor, patch, suffixTokens, build);
 	}
 
-	private static Version create (VersionType type, int major, Integer minor, Integer patch, String[] suffix, String build) {
+	private static Version create(VersionType type, int major, Integer minor, Integer patch, String[] suffix,
+			String build) {
 		StringBuilder sb = new StringBuilder().append(major);
 		if (minor != null) {
 			sb.append(".").append(minor);
@@ -484,8 +510,7 @@ public class Version implements Comparable<Version> {
 				if (first) {
 					sb.append("-");
 					first = false;
-				}
-				else {
+				} else {
 					sb.append(".");
 				}
 				sb.append(suffixToken);
@@ -499,7 +524,7 @@ public class Version implements Comparable<Version> {
 	}
 
 	@Override
-	public boolean equals (Object o) {
+	public boolean equals(Object o) {
 		if (this == o)
 			return true;
 		if (!(o instanceof Version))
@@ -509,12 +534,12 @@ public class Version implements Comparable<Version> {
 	}
 
 	@Override
-	public int hashCode () {
+	public int hashCode() {
 		return value.hashCode();
 	}
 
 	@Override
-	public int compareTo (Version version) {
+	public int compareTo(Version version) {
 		if (this.isGreaterThan(version))
 			return 1;
 		else if (this.isLowerThan(version))
@@ -522,8 +547,7 @@ public class Version implements Comparable<Version> {
 		return 0;
 	}
 
-	@Override
-	public String toString () {
+	public String string() {
 		return this.getValue();
 	}
 
@@ -532,7 +556,7 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return the original string passed in the constructor
 	 */
-	public String getOriginalValue () {
+	public String getOriginalValue() {
 		return originalValue;
 	}
 
@@ -541,61 +565,58 @@ public class Version implements Comparable<Version> {
 	 *
 	 * @return the version as a String
 	 */
-	public String getValue () {
+	public String getValue() {
 		return value;
 	}
 
 	/**
-	 * Returns the major part of the version.
-	 * Example: for "1.2.3" = 1
+	 * Returns the major part of the version. Example: for "1.2.3" = 1
 	 *
 	 * @return the major part of the version
 	 */
-	public Integer getMajor () {
+	public Integer getMajor() {
 		return this.major;
 	}
 
 	/**
-	 * Returns the minor part of the version.
-	 * Example: for "1.2.3" = 2
+	 * Returns the minor part of the version. Example: for "1.2.3" = 2
 	 *
 	 * @return the minor part of the version
 	 */
-	public Integer getMinor () {
+	public Integer getMinor() {
 		return this.minor;
 	}
 
 	/**
-	 * Returns the patch part of the version.
-	 * Example: for "1.2.3" = 3
+	 * Returns the patch part of the version. Example: for "1.2.3" = 3
 	 *
 	 * @return the patch part of the version
 	 */
-	public Integer getPatch () {
+	public Integer getPatch() {
 		return this.patch;
 	}
 
 	/**
-	 * Returns the suffix of the version.
-	 * Example: for "1.2.3-beta.4+sha98450956" = {"beta", "4"}
+	 * Returns the suffix of the version. Example: for "1.2.3-beta.4+sha98450956" =
+	 * {"beta", "4"}
 	 *
 	 * @return the suffix of the version
 	 */
-	public String[] getSuffixTokens () {
+	public String[] getSuffixTokens() {
 		return suffixTokens;
 	}
 
 	/**
-	 * Returns the build of the version.
-	 * Example: for "1.2.3-beta.4+sha98450956" = "sha98450956"
+	 * Returns the build of the version. Example: for "1.2.3-beta.4+sha98450956" =
+	 * "sha98450956"
 	 *
 	 * @return the build of the version
 	 */
-	public String getBuild () {
+	public String getBuild() {
 		return build;
 	}
 
-	public VersionType getType () {
+	public VersionType getType() {
 		return type;
 	}
 
@@ -603,20 +624,11 @@ public class Version implements Comparable<Version> {
 	 * The types of diffs between two versions.
 	 */
 	public enum GenericVersionDiff {
-		NONE,
-		MAJOR,
-		MINOR,
-		PATCH,
-		SUFFIX,
-		BUILD
+		NONE, MAJOR, MINOR, PATCH, SUFFIX, BUILD
 	}
 
 	public enum McVersionDiff {
-		MCVERSION,
-		MAJORMOD,
-		MAJORAPI,
-		MINOR,
-		PATCH
+		MCVERSION, MAJORMOD, MAJORAPI, MINOR, PATCH
 	}
 
 	/**
@@ -624,23 +636,40 @@ public class Version implements Comparable<Version> {
 	 */
 	public enum VersionType {
 		/**
-		 * The default type of version.
-		 * Major, minor and patch parts are required.
+		 * The default type of version. Major, minor and patch parts are required.
 		 * Suffixes and build are optional.
 		 */
 		STRICT,
 
 		/**
-		 * Major part is required.
-		 * Minor, patch, suffixes and build are optional.
+		 * Major part is required. Minor, patch, suffixes and build are optional.
 		 */
 		LOOSE,
 
 		/**
-		 * Follows the (simi-strict) Minecraft Versioning.
-		 * See https://mcforge.readthedocs.io/en/latest/conventions/versioning/
+		 * Follows the (simi-strict) Minecraft Versioning. See
+		 * https://mcforge.readthedocs.io/en/latest/conventions/versioning/
 		 */
 		MC
 	}
+	
+	public static class NullVersion extends Version {
 
+		public NullVersion() {
+			super("0.0.0");
+		}
+	}
+
+	public static class VersionException extends RuntimeException {
+
+		private static final long serialVersionUID = 3380584011358917827L;
+
+		public VersionException(String msg) {
+			super(msg);
+		}
+
+		public VersionException(String msg, Throwable t) {
+			super(msg, t);
+		}
+	}
 }
