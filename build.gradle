@@ -1,0 +1,65 @@
+plugins {
+	id 'com.gradle.plugin-publish' apply false
+	id 'net.kyori.indra' apply false
+	id 'net.kyori.indra.license-header' apply false
+	id 'net.kyori.indra.publishing.gradle-plugin' apply false
+	id 'io.freefair.lombok' apply false
+}
+
+group = "net.galacticraft"
+version = "1.0.0"
+
+subprojects {
+	apply plugin: 'io.freefair.lombok'
+	apply plugin: 'java-library'
+
+	repositories {
+		maven {
+			name 'galacticraft'
+			url 'https://repo.galacticraft.net/repository/maven-public/'
+		}
+	}
+	
+	sourceSets {
+	    test {
+	        java {
+	            srcDirs = ['src/test/java']
+	        }
+	        resources {
+	            srcDirs = ['src/test/resources']
+	        }
+	    }
+	}
+
+	plugins.withId("java") {
+
+		java {
+			withSourcesJar()
+			withJavadocJar()
+			toolchain {
+				languageVersion = JavaLanguageVersion.of(8)
+			}
+		}
+
+		plugins.apply "jacoco"
+		
+		jacoco {
+			reportsDirectory = layout.buildDirectory.dir('JacocoReports')
+		}
+
+		jacocoTestReport.reports.xml.required = true
+
+		test.useJUnitPlatform()
+
+		dependencies {
+			testImplementation 'org.assertj:assertj-core:3.22.0'
+			testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+			testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+			testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+		}
+
+		dependencies {
+			implementation 'com.google.guava:guava:30.1.1-jre'
+		}
+	}
+}

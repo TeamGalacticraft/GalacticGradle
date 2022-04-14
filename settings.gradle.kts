@@ -18,7 +18,7 @@ pluginManagement {
 
 rootProject.name = "GalacticGradle"
 
-sequenceOf("convention", "addon-development").forEach {
+sequenceOf("test-common", "addon-development", "convention").forEach {
     include(it)
     findProject(":$it")?.name = "${rootProject.name.toLowerCase(java.util.Locale.ROOT)}-$it"
 }

@@ -143,8 +143,6 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 	}
 
 	private void publicationMetadata(final Project target) {
-		log("Configuring Publishing Data");
-		
 		target.getGradle().projectsEvaluated(configure -> {
 			target.getExtensions().configure(PublishingExtension.class, publishing -> {
 				publishing.publications(publication -> {
@@ -191,7 +189,6 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 				
 				repositories.forEach(r -> {
 					if(this.canPublishTo(target, r)) {
-						log("Project can publish to " + r.name());
 						publishing.getRepositories().maven(repo -> {
 							repo.setName(r.name());
 							repo.setUrl(r.url());
@@ -208,15 +205,12 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 		final String username = repository.name() + "Username";
 		final String password = repository.name() + "Password";
 
-		if (!project.hasProperty(username)) {
-			log("Project missing " + username + " property");
+		if (!project.hasProperty(username))
 			return false;
-		}
-		if (!project.hasProperty(password)) {
-			log("Project missing " + password + " property");
+		
+		if (!project.hasProperty(password))
 			return false;
-		}
-			
+		
 		if (repository.releases() && Versions.isRelease(project))
 			return true;
 		if (repository.snapshots() && Versions.isSnapshot(project))
@@ -332,9 +326,4 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 			}
 		});
 	}
-
-	private void log(String message) {
-		this.project.getLogger().lifecycle(message);
-	}
-	
 }

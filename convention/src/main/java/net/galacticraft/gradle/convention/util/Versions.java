@@ -34,7 +34,6 @@ public final class Versions {
 		  }
 
 		  public static boolean isRelease(final @NonNull Project project) {
-			  project.getLogger().lifecycle(project.getVersion().toString());
 			  Version projectVersion = new Version(project.getVersion().toString());
 			  return projectVersion.isStable() && !isSnapshot(project);
 		  }
