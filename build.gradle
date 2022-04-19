@@ -1,5 +1,4 @@
 plugins {
-	id 'com.gradle.plugin-publish' apply false
 	id 'net.kyori.indra' apply false
 	id 'net.kyori.indra.license-header' apply false
 	id 'net.kyori.indra.publishing.gradle-plugin' apply false
@@ -7,11 +6,16 @@ plugins {
 }
 
 group = "net.galacticraft"
-version = "1.0.0"
+version = "1.0.2-SNAPSHOT"
+
+tasks.named('wrapper') {
+	distributionType = Wrapper.DistributionType.ALL
+}
 
 subprojects {
 	apply plugin: 'io.freefair.lombok'
 	apply plugin: 'java-library'
+	apply plugin: 'eclipse'
 
 	repositories {
 		maven {
@@ -19,16 +23,16 @@ subprojects {
 			url 'https://repo.galacticraft.net/repository/maven-public/'
 		}
 	}
-	
+
 	sourceSets {
-	    test {
-	        java {
-	            srcDirs = ['src/test/java']
-	        }
-	        resources {
-	            srcDirs = ['src/test/resources']
-	        }
-	    }
+		test {
+			java {
+				srcDirs = ['src/test/java']
+			}
+			resources {
+				srcDirs = ['src/test/resources']
+			}
+		}
 	}
 
 	plugins.withId("java") {
@@ -42,14 +46,17 @@ subprojects {
 		}
 
 		plugins.apply "jacoco"
-		
+
 		jacoco {
-			reportsDirectory = layout.buildDirectory.dir('JacocoReports')
+			reportsDirectory = layout.buildDirectory.dir("${buildDir}/JacocoReports")
 		}
 
 		jacocoTestReport.reports.xml.required = true
 
-		test.useJUnitPlatform()
+		test {
+			useJUnitPlatform()
+			finalizedBy jacocoTestReport
+		}
 
 		dependencies {
 			testImplementation 'org.assertj:assertj-core:3.22.0'
@@ -60,6 +67,29 @@ subprojects {
 
 		dependencies {
 			implementation 'com.google.guava:guava:30.1.1-jre'
+		}
+		
+		build.dependsOn 'test'
+	}
+	
+	eclipse {
+		classpath {
+			file {
+				whenMerged { classpath ->
+					String gradleHome = gradle.getGradleHomeDir()
+							.absolutePath
+							.replace(File.separator, '/')
+					String gradleSourceDirectory = "${gradleHome}/src"
+					classpath.entries.each { entry ->
+						if (entry in org.gradle.plugins.ide.eclipse.model.AbstractLibrary
+								&& entry.library.path.contains('generated-gradle-jars')) {
+							entry.sourcePath =
+									new org.gradle.plugins.ide.eclipse.model.internal.FileReferenceFactory()
+									.fromPath(gradleSourceDirectory)
+						}
+					}
+				}
+			}
 		}
 	}
 }

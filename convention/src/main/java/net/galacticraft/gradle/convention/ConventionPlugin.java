@@ -70,12 +70,16 @@ import org.gradle.plugins.signing.SigningPlugin;
 import org.gradle.plugins.signing.signatory.pgp.PgpSignatoryProvider;
 
 import net.galacticraft.gradle.common.Constants;
+import net.galacticraft.gradle.convention.api.model.Developer;
 import net.galacticraft.gradle.convention.task.SignJarTask;
 import net.galacticraft.gradle.convention.util.Versions;
 import net.kyori.indra.Indra;
 import net.kyori.indra.IndraExtension;
 import net.kyori.indra.IndraLicenseHeaderPlugin;
 import net.kyori.indra.IndraPlugin;
+import net.kyori.indra.api.model.ContinuousIntegration;
+import net.kyori.indra.api.model.Issues;
+import net.kyori.indra.api.model.SourceCodeManagement;
 import net.kyori.indra.git.GitPlugin;
 import net.kyori.indra.git.IndraGitExtension;
 import net.kyori.indra.repository.RemoteRepository;
@@ -87,9 +91,11 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 	public void apply(Project target) {
 		this.project = target;
 		this.applyPlugins(target.getPlugins());
+		
+		
 		final IndraExtension indra = Indra.extension(target.getExtensions());
-		final GalacticraftConventionExtension galacticraft = target.getExtensions().create("galacticraftConvention",
-				GalacticraftConventionExtension.class, indra, target.getExtensions().getByType(LicenseExtension.class),
+		final ConventionExtension galacticraft = target.getExtensions().create("galacticraftConvention",
+				ConventionExtension.class, indra, target.getExtensions().getByType(LicenseExtension.class),
 				target.getExtensions().getByType(JavaPluginExtension.class));
 		indra.includeJavaSoftwareComponentInPublications(true);
 
@@ -143,6 +149,8 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 	}
 
 	private void publicationMetadata(final Project target) {
+		ConventionExtension extension = project.getExtensions().findByType(ConventionExtension.class);
+		IndraExtension indra = project.getExtensions().findByType(IndraExtension.class);
 		target.getGradle().projectsEvaluated(configure -> {
 			target.getExtensions().configure(PublishingExtension.class, publishing -> {
 				publishing.publications(publication -> {
@@ -151,16 +159,49 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 						maven.setGroupId(target.getGroup().toString());
 						maven.setVersion(target.getVersion().toString());
 						maven.pom(pom -> {
-							pom.developers(developers -> developers.developer(developer -> {
-								developer.getName().set("TeamGalacticraft");
-								developer.getEmail().set("team@galacticraft.net");
-							}));
+							pom.developers(developers -> { 
+								for(Developer dev : extension.developers()) {
+									developers.developer(developer -> {
+										developer.getId().set(dev.id());
+										developer.getName().set(dev.name());
+										developer.getEmail().set(dev.email());
+										developer.getRoles().set(dev.roles());
+									});
+								}
+								developers.developer(developer -> {
+									developer.getName().set("TeamGalacticraft");
+									developer.getEmail().set("team@galacticraft.net");
+								});
+							});
+
 							pom.organization(organization -> {
 								organization.getName().set(Constants.GITHUB_ORG);
 								organization.getUrl().set("https://galacticraft.net/");
 							});
+							
+							if(indra.issues().isPresent()) {
+								pom.issueManagement(issues -> {
+									Issues i = indra.issues().get();
+									issues.getSystem().set(i.system());
+									issues.getUrl().set(i.url());
+								});
+							}
+							if(indra.scm().isPresent()) {
+								pom.scm(scm -> {
+									SourceCodeManagement s = indra.scm().get();
+									scm.getConnection().set(s.connection());
+									scm.getDeveloperConnection().set(s.developerConnection());
+									scm.getUrl().set(s.connection());
+								});
+							}
+							if(indra.ci().isPresent()) {
+								pom.ciManagement(ci -> {
+									ContinuousIntegration i = indra.ci().get();
+									ci.getSystem().set(i.system());
+									ci.getUrl().set(i.url());
+								});
+							}
 						});
-
 					});
 				});
 				
@@ -202,8 +243,8 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 
 	private boolean canPublishTo(final Project project, final RemoteRepository repository) {
 		// as per PasswordCredentials
-		final String username = repository.name() + "Username";
-		final String password = repository.name() + "Password";
+		final String username = "TeamGCUsername";
+		final String password = "TeamGCPassword";
 
 		if (!project.hasProperty(username))
 			return false;
@@ -258,9 +299,6 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 		if (!this.project.hasProperty(ConventionConstants.PropertyAttributes.GALACTIC_KEY_STORE)) {
 			return;
 		}
-
-		// We have to replace the default artifact which is a bit ugly
-		// https://github.com/gradle/gradle/pull/13650 should make it easier
 		final String[] outgoingConfigurations = { JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME,
 				JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME };
 		final String keyStoreProp = (String) this.project
@@ -270,7 +308,6 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 		if (fileTemp.exists()) {
 			keyStoreFile = fileTemp;
 		} else {
-			// Write keystore to a temporary file
 			final Path dest = this.project.getLayout().getProjectDirectory().file(".gradle/signing-key").getAsFile()
 					.toPath();
 			try {
@@ -280,15 +317,12 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 			} catch (final IOException ignored) {
 				// oh well
 			}
-
 			final byte[] decoded = Base64.getDecoder().decode(keyStoreProp);
 			try (final OutputStream out = Files.newOutputStream(dest)) {
 				out.write(decoded);
 			} catch (final IOException ex) {
 				throw new GradleException("Unable to write key file to disk", ex);
 			}
-
-			// Delete the temporary file when the runtime exits
 			keyStoreFile = dest.toFile();
 			keyStoreFile.deleteOnExit();
 		}

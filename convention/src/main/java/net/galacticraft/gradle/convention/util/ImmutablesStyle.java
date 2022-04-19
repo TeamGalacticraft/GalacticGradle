@@ -24,44 +24,35 @@
  */
 package net.galacticraft.gradle.convention.util;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.gradle.api.JavaVersion;
-import org.gradle.api.Project;
+import org.checkerframework.checker.nullness.qual.Nullable;
+import org.immutables.value.Value;
 
-import net.galacticraft.gradle.common.Version;
+@Target({ElementType.PACKAGE, ElementType.TYPE})
+@Retention(RetentionPolicy.CLASS)
+@Value.Style(
+	  with = "*",
+	  of = "new",
+	  set = "*",
+	  add = "*",
+	  builder = "new",
+	  create = "new",
+	  typeModifiable = "*Impl",
+	  typeImmutable = "*Impl",
+	  typeBuilder = "BuilderImpl",
+	  visibility = Value.Style.ImplementationVisibility.PACKAGE,
+	  builderVisibility = Value.Style.BuilderVisibility.PACKAGE,
+	  deferCollectionAllocation = true,
+	  jdkOnly = true,
+	  nullableAnnotation = "org.checkerframework.checker.nullness.qual.Nullable",
+	  headerComments = true,
+	  passAnnotations = {Nullable.class, NonNull.class}
+)
+public @interface ImmutablesStyle {
 
-public final class Versions {
-	  public static int versionNumber(final @NonNull JavaVersion version) {
-		    return version.ordinal() + 1;
-		  }
-
-		  public static String versionString(final int version) {
-		    if(version <= 8) {
-		      return "1." + version;
-		    } else {
-		      return String.valueOf(version);
-		    }
-		  }
-
-		  public static String versionString(final @NonNull JavaVersion version) {
-		    if(version == JavaVersion.VERSION_1_9) {
-		      return "9";
-		    } else if(version == JavaVersion.VERSION_1_10) {
-		      return "10";
-		    } else {
-		      return version.toString();
-		    }
-		  }
-
-		  public static boolean isSnapshot(final @NonNull Project project) {
-		    return project.getVersion().toString().contains("-SNAPSHOT");
-		  }
-
-		  public static boolean isRelease(final @NonNull Project project) {
-			  Version projectVersion = new Version(project.getVersion().toString());
-			  return projectVersion.isStable() && !isSnapshot(project);
-		  }
-
-		  private Versions() {
-		  }
 }

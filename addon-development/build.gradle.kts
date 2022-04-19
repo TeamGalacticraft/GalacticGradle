@@ -4,7 +4,6 @@ import org.cadixdev.gradle.licenser.LicenseExtension
 
 plugins {
     id("java-gradle-plugin")
-    id("com.gradle.plugin-publish")
     id("net.kyori.indra")
     id("net.kyori.indra.license-header")
     id("net.kyori.indra.publishing.gradle-plugin")

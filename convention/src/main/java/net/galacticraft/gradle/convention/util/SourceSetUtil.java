@@ -24,44 +24,25 @@
  */
 package net.galacticraft.gradle.convention.util;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.JavaPluginExtension;
+import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.util.GradleVersion;
 
-import net.galacticraft.gradle.common.Version;
+import lombok.experimental.UtilityClass;
 
-public final class Versions {
-	  public static int versionNumber(final @NonNull JavaVersion version) {
-		    return version.ordinal() + 1;
-		  }
-
-		  public static String versionString(final int version) {
-		    if(version <= 8) {
-		      return "1." + version;
-		    } else {
-		      return String.valueOf(version);
-		    }
-		  }
-
-		  public static String versionString(final @NonNull JavaVersion version) {
-		    if(version == JavaVersion.VERSION_1_9) {
-		      return "9";
-		    } else if(version == JavaVersion.VERSION_1_10) {
-		      return "10";
-		    } else {
-		      return version.toString();
-		    }
-		  }
-
-		  public static boolean isSnapshot(final @NonNull Project project) {
-		    return project.getVersion().toString().contains("-SNAPSHOT");
-		  }
-
-		  public static boolean isRelease(final @NonNull Project project) {
-			  Version projectVersion = new Version(project.getVersion().toString());
-			  return projectVersion.isStable() && !isSnapshot(project);
-		  }
-
-		  private Versions() {
-		  }
+@SuppressWarnings("deprecation")
+@UtilityClass
+public class SourceSetUtil {
+	
+	public static SourceSetContainer sourceSets(Project project) {
+		return isOlder(project) ? project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets()
+				: project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets();
+	}
+	
+	private static boolean isOlder(Project project) {
+		return GradleVersion.version(project.getGradle().getGradleVersion())
+				.compareTo(GradleVersion.version("7.1")) < 0;
+	}
 }

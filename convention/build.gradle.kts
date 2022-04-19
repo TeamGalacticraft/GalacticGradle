@@ -4,14 +4,24 @@ import org.cadixdev.gradle.licenser.LicenseExtension
 
 plugins {
     id("java-gradle-plugin")
-    id("com.gradle.plugin-publish")
     id("net.kyori.indra")
     id("net.kyori.indra.license-header")
     id("net.kyori.indra.publishing.gradle-plugin")
     id("net.kyori.indra.git")
 }
 
+sourceSets.main.configure {
+    java.srcDirs("${buildDir}/generated/sources/annotationProcessor/java/main").includes.addAll(arrayOf("**/*.*"))
+}
+
 dependencies {
+    implementation("org.codehaus.groovy:groovy-all:2.4.15")
+    annotationProcessor("javax.annotation:javax.annotation-api:1.3.2")
+    "compileOnlyApi"("javax.annotation:javax.annotation-api:1.3.2")
+    "compileOnlyApi"("org.checkerframework:checker-qual:3.17.0")
+    "compileOnlyApi"("org.immutables:value:2.9.0:annotations")
+    annotationProcessor("org.immutables:value:2.9.0")
+    "compileOnlyApi"("org.immutables:builder:2.9.0")
     "compileOnlyApi"("org.checkerframework:checker-qual:3.17.0")
     api(project(":galacticgradle-addon-development"))
     api("net.kyori:indra-common:2.0.6")
@@ -83,6 +93,7 @@ extensions.configure(LicenseExtension::class) {
         this["url"] = projectUrl
     }
     header(rootProject.file("HEADER.txt"))
+    ignoreFailures(true)
 }
 
 extensions.configure(SigningExtension::class) {
@@ -121,3 +132,4 @@ extensions.findByType(IndraPluginPublishingExtension::class)?.apply {
         listOf("galacticraft", "convention")
     )
 }
+
