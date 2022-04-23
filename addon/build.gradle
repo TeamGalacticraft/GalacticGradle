@@ -1,0 +1,43 @@
+plugins {
+    id 'java-gradle-plugin'
+    id "org.shipkit.shipkit-changelog"
+    id "com.gradle.plugin-publish"
+    id "com.adarshr.test-logger"
+}
+
+dependencies {
+	compileOnly("net.minecraftforge.gradle.legacy:ForgeGradle:2.3")
+	compileOnly("net.minecraftforge.gradle:ForgeGradle:5.1.31") {
+		transitive = false
+	}
+    implementation project(':common')
+}
+
+gradlePlugin {
+    plugins {
+        addonPlugin {
+            id = 'net.galacticraft.gradle.addon'
+            description = 'Gradle Plugin for developing Galacticraft Addons'
+            implementationClass = 'net.galacticraft.plugins.addon.AddonPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://galacticraft.net/'
+    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    tags = ['galacticraft', 'plugin']
+}
+
+publishPlugins {
+    onlyIf notSnapshot
+}
+
+license {
+    header = rootProject.file("HEADER.txt")
+    properties {
+        name = "${name}"
+        organization = "${organization}"
+        url = "${url}"
+    }
+}

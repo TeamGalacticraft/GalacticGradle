@@ -1,0 +1,63 @@
+plugins {
+    id 'java-gradle-plugin'
+    id "org.shipkit.shipkit-changelog"
+    id "com.gradle.plugin-publish"
+    id "com.adarshr.test-logger"
+	id "com.github.johnrengelman.shadow" version "7.1.2"
+}
+
+sourceSets {
+	test.java.srcDirs = ['src/test/java']
+}
+
+dependencies {
+	compileOnly("net.minecraftforge.gradle:ForgeGradle:5.1.31") {
+		transitive = false
+	}
+	compileOnly('net.minecraftforge:artifactural:3.0.8') {
+        transitive = false
+    }
+	implementation 'com.modrinth.minotaur:Minotaur:2.1.2'
+	implementation 'com.google.code.gson:gson:2.9.0'
+}
+
+shadowJar {
+	classifier = null
+	project.configurations.implementation.canBeResolved = true
+	configurations = [project.configurations.implementation]
+}
+
+gradlePlugin {
+    plugins {
+        modrinthPlugin {
+            id = 'net.galacticraft.gradle.upload.modrinth'
+            description = 'Modrinth plugin for publishing builds to the website'
+            implementationClass = 'net.galacticraft.plugins.modrinth.ModrinthUploadPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://galacticraft.net/'
+    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    tags = ['galacticraft', 'plugin']
+}
+
+tasks.withType(Javadoc) {
+	failOnError false
+	options.addStringOption('Xdoclint:none', '-quiet')
+	options.addStringOption('encoding', 'UTF-8')
+	options.addStringOption('charSet', 'UTF-8')
+}
+
+publishPlugins {
+    onlyIf notSnapshot
+}
+
+task pub() {
+	project.publishing.publications.each {
+		println(it)
+	}
+}
+
+build.dependsOn project(':common').build

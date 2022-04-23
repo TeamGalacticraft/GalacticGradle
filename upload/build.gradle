@@ -1,0 +1,41 @@
+plugins {
+    id 'java-gradle-plugin'
+    id "org.shipkit.shipkit-changelog"
+    id "com.gradle.plugin-publish"
+    id "com.adarshr.test-logger"
+}
+
+dependencies {
+    implementation project(':common')
+    implementation project(':modrinth')
+    implementation project(':curseforge')
+}
+
+gradlePlugin {
+    plugins {
+        uploadPlugin {
+            id = 'net.galacticraft.gradle.upload'
+            description = 'Applies both the CurseForge & Modrinth Upload plugins'
+            implementationClass = 'net.galacticraft.plugins.upload.UploadingPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://galacticraft.net/'
+    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    tags = ['galacticraft', 'plugin']
+}
+
+publishPlugins {
+    onlyIf notSnapshot
+}
+
+license {
+	header = rootProject.file("HEADER.txt")
+	properties {
+		name = "${name}"
+		organization = "${organization}"
+		url = "${url}"
+	}
+}

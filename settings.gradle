@@ -1,0 +1,3 @@
+rootProject.name = "GalacticGradle"
+
+include 'common', 'convention', 'addon', 'modrinth', 'curseforge', 'upload'

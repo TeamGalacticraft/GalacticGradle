@@ -1,8 +1,13 @@
-# gradle-modular
+# GalacticGradle
 
-Example gradle project with two modules:
- - client
- - server
+Plugin Suite providing:
+- Default publishing for TeamGalacticraft Projects
+- Galacticraft Addon plugin for addon developers
+- Optional mod upload plugins for CurseForge and Modrinth
+
+## Plugins
+
+### `net.galacticraft.gradle.dev`
 
 To install each module individually use `com.github.User.Repo` for groupId and module name as artifact id:
 

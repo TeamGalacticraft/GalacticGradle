@@ -1,0 +1,40 @@
+plugins {
+    id 'java-gradle-plugin'
+    id "org.shipkit.shipkit-changelog"
+    id "com.gradle.plugin-publish"
+    id "com.adarshr.test-logger"
+}
+
+dependencies {
+	implementation 'net.galacticraft.plugins.curseforge.internal:CurseGradle:2.0.1'
+    implementation project(':common')
+}
+
+gradlePlugin {
+    plugins {
+        curseforgePlugin {
+            id = 'net.galacticraft.gradle.upload.curse'
+            description = 'Gradle plugin to upload artifacts to CurseForge'
+            implementationClass = 'net.galacticraft.plugins.curseforge.CurseUploadPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://galacticraft.net/'
+    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    tags = ['galacticraft', 'plugin']
+}
+
+publishPlugins {
+    onlyIf notSnapshot
+}
+
+license {
+    header = rootProject.file("HEADER.txt")
+    properties {
+        name = "${name}"
+        organization = "${organization}"
+        url = "${url}"
+    }
+}
