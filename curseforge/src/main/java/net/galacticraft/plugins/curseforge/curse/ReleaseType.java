@@ -23,48 +23,36 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.model;
+package net.galacticraft.plugins.curseforge.curse;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.jetbrains.annotations.NotNull;
+public enum ReleaseType {
 
-public interface Developer {
+	RELEASE("release"), BETA("beta"), ALPHA("alpha");
 
-	static @NotNull Builder builder() {
-		return new DeveloperImpl.BuilderImpl();
+	private final String value;
+	public final static List<String> CONSTANTS = new ArrayList<>();
+	public final static List<ReleaseType> VALID_TYPES = new ArrayList<>();
+
+	static {
+		for (ReleaseType c : values()) {
+			CONSTANTS.add(c.value);
+			VALID_TYPES.add(c);
+		}
 	}
 
-	@NotNull
-	String id();
+	ReleaseType(String value) {
+		this.value = value;
+	}
 
-	@NotNull
-	String name();
+	@Override
+	public String toString() {
+		return this.value;
+	}
 
-	@NotNull
-	String email();
-
-	@NotNull
-	List<String> roles();
-
-	interface Builder {
-
-		@NotNull
-		Builder from(final Developer developer);
-
-		@NotNull
-		Builder id(final @NotNull String id);
-
-		@NotNull
-		Builder name(final @NotNull String name);
-
-		@NotNull
-		Builder email(final @NotNull String email);
-
-		@NotNull
-		Builder roles(final @NotNull String... roles);
-
-		@NotNull
-		Developer build();
+	public String value() {
+		return this.value;
 	}
 }

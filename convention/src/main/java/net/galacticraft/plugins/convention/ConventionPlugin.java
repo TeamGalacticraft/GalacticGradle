@@ -69,10 +69,9 @@ import org.gradle.plugins.signing.SigningExtension;
 import org.gradle.plugins.signing.SigningPlugin;
 import org.gradle.plugins.signing.signatory.pgp.PgpSignatoryProvider;
 
-import net.galacticraft.common.Constants;
-import net.galacticraft.common.Versions;
 import net.galacticraft.plugins.convention.model.Developer;
 import net.galacticraft.plugins.convention.task.SignJarTask;
+import net.galacticraft.plugins.convention.util.Versions;
 import net.kyori.indra.Indra;
 import net.kyori.indra.IndraExtension;
 import net.kyori.indra.IndraLicenseHeaderPlugin;

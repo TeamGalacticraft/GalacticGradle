@@ -1,91 +1,91 @@
 package net.galacticraft.plugins.curseforge.internal;
 
-import com.google.common.base.Throwables;
+import java.util.Arrays;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
-import groovy.lang.Closure;
-import net.galacticraft.plugins.curseforge.internal.json.GameVersion;
-import net.galacticraft.plugins.curseforge.internal.json.VersionType;
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
+import lombok.Getter;
 
 public class CurseVersions {
-    /**
-     * Load the valid game versions from CurseForge
-     *
-     * @param apiKey The api key to use to connect to CurseForge
-     */
-    public static void initialize(String apiKey) {
+	private static final TObjectIntMap<String> gameVersions = new TObjectIntHashMap<String>();
 
-        gameVersions.clear();
+	public static void init() {
+		gameVersions.clear();
 
-        log.info("Initializing CurseForge versions...");
+		final TIntSet validVersionTypes = new TIntHashSet();
 
-        try {
-            final TIntSet validVersionTypes = new TIntHashSet();
+		String versionTypesReponse = Util.fromResourceAsString("VersionTypes.json");
+		VersionType[] types = Util.getGson().fromJson(versionTypesReponse, VersionType[].class);
+		for (VersionType type : types) {
+			String slug = type.getSlug();
+			if (slug.startsWith("minecraft") || slug.equals("java") || slug.equals("modloader")) {
+				validVersionTypes.add(type.getId());
+			}
+		}
 
-            String versionTypesJson = Util.httpGet(apiKey, CurseGradlePlugin.getVERSION_TYPES_URL());
-            //noinspection GroovyAssignabilityCheck
-            VersionType[] types = Util.getGson().fromJson(versionTypesJson, VersionType[].class);
-            
-            
-            DefaultGroovyMethods.each(types, new Closure<Boolean>(null, null) {
-                public Boolean doCall(Object type) {
-                    if (((VersionType) type).getSlug().startsWith("minecraft") || ((VersionType) type).getSlug().equals("java") || ((VersionType) type).getSlug().equals("modloader")) {
-                        return validVersionTypes.add(((VersionType) type).getId());
-                    }
+		String GameVersionsResponse = Util.fromResourceAsString("GameVersions.json");
+		GameVersion[] versions = Util.getGson().fromJson(GameVersionsResponse, GameVersion[].class);
+		for (GameVersion version : versions) {
+			if (validVersionTypes.contains(version.getGameVersionTypeID())) {
+				gameVersions.put(version.getName(), version.getId());
+			}
+		}
+	}
 
-                }
+	public static Integer[] resolveGameVersion(final Iterable<Object> objects) {
+		final TIntSet set = new TIntHashSet();
+		for (Object obj : objects) {
+			final String version = obj.toString();
+			int gameVersion = gameVersions.get(version);
+			if (gameVersion == 0) {
+				throw new IllegalArgumentException(version + " is not a valid game version. Valid versions are: "
+						+ String.valueOf(gameVersions.keySet()));
+			}
 
-            });
+			set.add(gameVersion);
+		}
+		return Arrays.stream(set.toArray()).boxed().toArray(Integer[]::new);
+	}
+	
+	@Getter
+	private static class GameVersion {
 
-            String gameVersionsJson = Util.httpGet(apiKey, CurseGradlePlugin.getVERSION_URL());
-            //noinspection GroovyAssignabilityCheck
-            GameVersion[] versions = Util.getGson().fromJson(gameVersionsJson, GameVersion[].class);
-            DefaultGroovyMethods.each(versions, new Closure<Integer>(null, null) {
-                public Integer doCall(Object version) {
-                    if (((TIntHashSet) validVersionTypes).contains(((GameVersion) version).getGameVersionTypeID())) {
-                        return gameVersions.put(((GameVersion) version).getName(), ((GameVersion) version).getId());
-                    }
+		@SerializedName("id")
+		@Expose
+	    private int id;
+		
+		@SerializedName("gameVersionTypeID")
+		@Expose
+	    private int gameVersionTypeID;
+		
+		@SerializedName("name")
+		@Expose
+	    private String name;
+		
+		@SerializedName("slug")
+		@Expose
+	    private String slug;
+	}
+	
+	@Getter
+	private static class VersionType {
 
-                }
+		@SerializedName("id")
+		@Expose
+		private int id;
+		
+		@SerializedName("name")
+		@Expose
+		private String name;
+		
+		@SerializedName("slug")
+		@Expose
+		private String slug;
 
-            });
-
-            log.info("CurseForge versions initialized");
-        } catch (Throwable t) {
-            throw Throwables.propagate(t);
-        }
-
-    }
-
-    public static Integer[] resolveGameVersion(final Iterable<Object> objects) {
-        final TIntSet set = new TIntHashSet();
-        DefaultGroovyMethods.each(objects, new Closure<Boolean>(null, null) {
-            public Boolean doCall(Object obj) {
-                final String version = obj.toString();
-                int id = gameVersions.get(version);
-                if (id == 0) {
-                    throw new IllegalArgumentException(version + " is not a valid game version. Valid versions are: " + String.valueOf(gameVersions.keySet()));
-                }
-
-                return set.add(id);
-            }
-
-        });
-
-        return set.toArray();
-    }
-
-    private static final Logger log = Logging.getLogger(CurseVersions.class);
-    private static final TObjectIntMap<String> gameVersions = new TObjectIntHashMap<String>();
-
-    private static <Value extends Value> Value setFileID(CurseArtifact propOwner, Value fileID) {
-        ((CurseArtifact) propOwner).setFileID(fileID);
-        return fileID;
-    }
+	}
 }

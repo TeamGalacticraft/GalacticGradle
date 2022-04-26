@@ -40,9 +40,8 @@ import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.bundling.Jar;
 import org.jetbrains.annotations.NotNull;
 
-import net.galacticraft.common.Checks;
-import net.galacticraft.common.Constants;
 import net.galacticraft.plugins.convention.model.Developer;
+import net.galacticraft.plugins.convention.util.Checks;
 import net.kyori.indra.IndraExtension;
 import net.kyori.indra.api.model.ApplyTo;
 

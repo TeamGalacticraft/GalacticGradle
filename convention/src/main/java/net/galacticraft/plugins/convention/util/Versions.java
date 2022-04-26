@@ -23,48 +23,44 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.model;
+package net.galacticraft.plugins.convention.util;
 
-import java.util.List;
+import org.gradle.api.JavaVersion;
+import org.gradle.api.Project;
+import org.gradle.internal.impldep.org.eclipse.jgit.annotations.NonNull;
 
-import org.jetbrains.annotations.NotNull;
+public final class Versions {
+	  public static int versionNumber(final @NonNull JavaVersion version) {
+		    return version.ordinal() + 1;
+		  }
 
-public interface Developer {
+		  public static String versionString(final int version) {
+		    if(version <= 8) {
+		      return "1." + version;
+		    } else {
+		      return String.valueOf(version);
+		    }
+		  }
 
-	static @NotNull Builder builder() {
-		return new DeveloperImpl.BuilderImpl();
-	}
+		  public static String versionString(final @NonNull JavaVersion version) {
+		    if(version == JavaVersion.VERSION_1_9) {
+		      return "9";
+		    } else if(version == JavaVersion.VERSION_1_10) {
+		      return "10";
+		    } else {
+		      return version.toString();
+		    }
+		  }
 
-	@NotNull
-	String id();
+		  public static boolean isSnapshot(final @NonNull Project project) {
+		    return project.getVersion().toString().contains("-SNAPSHOT");
+		  }
 
-	@NotNull
-	String name();
+		  public static boolean isRelease(final @NonNull Project project) {
+			  Version projectVersion = new Version(project.getVersion().toString());
+			  return projectVersion.isStable() && !isSnapshot(project);
+		  }
 
-	@NotNull
-	String email();
-
-	@NotNull
-	List<String> roles();
-
-	interface Builder {
-
-		@NotNull
-		Builder from(final Developer developer);
-
-		@NotNull
-		Builder id(final @NotNull String id);
-
-		@NotNull
-		Builder name(final @NotNull String name);
-
-		@NotNull
-		Builder email(final @NotNull String email);
-
-		@NotNull
-		Builder roles(final @NotNull String... roles);
-
-		@NotNull
-		Developer build();
-	}
+		  private Versions() {
+		  }
 }

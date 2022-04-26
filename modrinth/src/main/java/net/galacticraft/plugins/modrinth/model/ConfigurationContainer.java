@@ -23,48 +23,52 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.model;
+package net.galacticraft.plugins.modrinth.model;
 
-import java.util.List;
+import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.Property;
 
-import org.jetbrains.annotations.NotNull;
+public interface ConfigurationContainer {
 
-public interface Developer {
+	Property<String> getProjectId();
 
-	static @NotNull Builder builder() {
-		return new DeveloperImpl.BuilderImpl();
+	default void projectId(final String projectId) {
+		this.getProjectId().set(projectId);
 	}
 
-	@NotNull
-	String id();
+	Property<Boolean> getDebug();
 
-	@NotNull
-	String name();
+	default void debug() {
+		this.getDebug().set(true);
+	}
+	
+	Property<String> getVersionNumnber();
+	
+	default void version(final String version) {
+		this.getVersionNumnber().set(version);
+	}
+	
+	Property<String> getVersionType();
+	
+	default void versionType(final String version) {
+		this.getVersionType().set(version);
+	}
 
-	@NotNull
-	String email();
+	Property<String> getChangelog();
+	
+	default void changelog(final String changelog) {
+		this.getChangelog().set(changelog);
+	}
+	
+	ListProperty<String> getGameVersions();
+	
+	default void gameVersions(final String... gameVersions) {
+		this.getGameVersions().addAll(gameVersions);
+	}
 
-	@NotNull
-	List<String> roles();
-
-	interface Builder {
-
-		@NotNull
-		Builder from(final Developer developer);
-
-		@NotNull
-		Builder id(final @NotNull String id);
-
-		@NotNull
-		Builder name(final @NotNull String name);
-
-		@NotNull
-		Builder email(final @NotNull String email);
-
-		@NotNull
-		Builder roles(final @NotNull String... roles);
-
-		@NotNull
-		Developer build();
+	ListProperty<String> getLoaders();
+	
+	default void loaders(final String... loaders) {
+		this.getLoaders().addAll(loaders);
 	}
 }

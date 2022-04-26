@@ -5,9 +5,22 @@ plugins {
     id "com.adarshr.test-logger"
 }
 
+sourceSets {
+	main.resources.srcDirs = ['src/main/resources']
+}
+
 dependencies {
-	implementation 'net.galacticraft.plugins.curseforge.internal:CurseGradle:2.0.1'
-    implementation project(':common')
+	implementation 'com.squareup.okhttp3:okhttp:3.14.9'
+	implementation 'com.squareup.okhttp3:logging-interceptor:3.14.9'
+    implementation 'com.google.code.gson:gson:2.9.0'
+	implementation 'com.google.guava:guava:31.0.1-jre'
+	implementation 'net.sf.trove4j:trove4j:3.0.3'
+	
+	compileOnly 'org.projectlombok:lombok:1.18.24'
+	annotationProcessor 'org.projectlombok:lombok:1.18.24'
+	
+	testCompileOnly 'org.projectlombok:lombok:1.18.24'
+	testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
 }
 
 gradlePlugin {
@@ -30,11 +43,3 @@ publishPlugins {
     onlyIf notSnapshot
 }
 
-license {
-    header = rootProject.file("HEADER.txt")
-    properties {
-        name = "${name}"
-        organization = "${organization}"
-        url = "${url}"
-    }
-}

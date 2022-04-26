@@ -57,9 +57,9 @@ import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.jetbrains.annotations.NotNull;
 
-import net.galacticraft.common.plugins.GradlePlugin;
 import net.galacticraft.plugins.curseforge.CurseUploadPlugin;
 import net.galacticraft.plugins.modrinth.ModrinthUploadPlugin;
+import net.galacticraft.plugins.upload.base.GradlePlugin;
 
 public class UploadingPlugin implements GradlePlugin {
 	

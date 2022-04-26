@@ -23,48 +23,47 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.model;
+package net.galacticraft.plugins.curseforge.curse;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.jetbrains.annotations.NotNull;
+public enum RelationType {
 
-public interface Developer {
+	EMBEDEDLIB("embeddedLibrary"),
+	OPTIONAL("optionalDependency"),
+	REQUIRED("requiredDependency"),
+	TOOL("tool"),
+	INCOMPATIBLE("incompatible");
 
-	static @NotNull Builder builder() {
-		return new DeveloperImpl.BuilderImpl();
+	private final String value;
+	private final static Map<String, RelationType> CONSTANTS = new HashMap<String, RelationType>();
+
+	static {
+		for (RelationType c : values()) {
+			CONSTANTS.put(c.value, c);
+		}
 	}
 
-	@NotNull
-	String id();
+	RelationType(String value) {
+		this.value = value;
+	}
 
-	@NotNull
-	String name();
+	@Override
+	public String toString() {
+		return this.value;
+	}
 
-	@NotNull
-	String email();
+	public String value() {
+		return this.value;
+	}
 
-	@NotNull
-	List<String> roles();
-
-	interface Builder {
-
-		@NotNull
-		Builder from(final Developer developer);
-
-		@NotNull
-		Builder id(final @NotNull String id);
-
-		@NotNull
-		Builder name(final @NotNull String name);
-
-		@NotNull
-		Builder email(final @NotNull String email);
-
-		@NotNull
-		Builder roles(final @NotNull String... roles);
-
-		@NotNull
-		Developer build();
+	public static RelationType fromValue(String value) {
+		RelationType constant = CONSTANTS.get(value);
+		if (constant == null) {
+			throw new IllegalArgumentException(value);
+		} else {
+			return constant;
+		}
 	}
 }

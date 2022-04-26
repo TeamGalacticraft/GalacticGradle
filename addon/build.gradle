@@ -10,7 +10,6 @@ dependencies {
 	compileOnly("net.minecraftforge.gradle:ForgeGradle:5.1.31") {
 		transitive = false
 	}
-    implementation project(':common')
 }
 
 gradlePlugin {
@@ -31,13 +30,4 @@ pluginBundle {
 
 publishPlugins {
     onlyIf notSnapshot
-}
-
-license {
-    header = rootProject.file("HEADER.txt")
-    properties {
-        name = "${name}"
-        organization = "${organization}"
-        url = "${url}"
-    }
 }

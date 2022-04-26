@@ -33,6 +33,7 @@ import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
@@ -42,7 +43,7 @@ import org.gradle.api.tasks.Nested;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
-import net.galacticraft.plugins.modrinth.config.ConfigurationContainer;
+import net.galacticraft.plugins.modrinth.model.ConfigurationContainer;
 import net.galacticraft.plugins.modrinth.model.DependencyContainer;
 import net.galacticraft.plugins.modrinth.model.type.VersionType;
 
@@ -51,7 +52,7 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 	private final Property<String> projectId, versionNumber, versionType, changelog;
 	private final Property<Boolean> debug;
 	private final ListProperty<String> gameVersions, loaders;
-	
+	private final RegularFileProperty uploadFile;
 	private final NamedDomainObjectContainer<DependencyContainer> dependencies;
 
 	@Inject
@@ -60,6 +61,7 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 		this.debug = factory.property(Boolean.class).convention(false);
         this.gameVersions = factory.listProperty(String.class).empty();
         this.loaders = factory.listProperty(String.class).empty();
+        this.uploadFile = factory.fileProperty();
         
         Provider<String> version = project.provider(() -> project.getVersion() == null ? null : String.valueOf(project.getVersion()));
         this.versionNumber = factory.property(String.class).convention(version);
@@ -81,6 +83,10 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 	@Override
 	public Property<String> getProjectId() {
 		return this.projectId;
+	}
+	
+	public RegularFileProperty getUploadFile() {
+		return this.uploadFile;
 	}
 
 	@Override

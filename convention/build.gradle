@@ -6,19 +6,12 @@ plugins {
 }
 
 sourceSets {
-	main.java.srcDirs += "build/generated/sources/annotationProcessor/java/main"
 	test.java.srcDirs = ['src/test/java']
 }
 
 dependencies {
-	annotationProcessor 'org.immutables:value:2.9.0'
-	implementation "org.jetbrains:annotations:23.0.0"
-	implementation 'org.checkerframework:checker-qual:3.17.0'
-	implementation 'org.immutables:value:2.9.0:annotations'
-	implementation 'org.immutables:builder:2.9.0'
 	implementation 'net.kyori:indra-common:2.0.6'
 	implementation 'gradle.plugin.org.cadixdev.gradle:licenser:0.6.1'
-	api project(':common')
 }
 
 gradlePlugin {
@@ -39,13 +32,4 @@ pluginBundle {
 
 publishPlugins {
     onlyIf notSnapshot
-}
-
-license {
-	header = rootProject.file("HEADER.txt")
-	properties {
-		name = "${name}"
-		organization = "${organization}"
-		url = "${url}"
-	}
 }

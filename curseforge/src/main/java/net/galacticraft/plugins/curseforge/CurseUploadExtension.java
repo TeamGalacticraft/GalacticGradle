@@ -25,23 +25,138 @@
 
 package net.galacticraft.plugins.curseforge;
 
+import java.io.File;
+
 import javax.inject.Inject;
 
 import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Nested;
 
-import net.galacticraft.plugins.curseforge.internal.CurseExtension;
-import net.galacticraft.common.Checks;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
-public class CurseUploadExtension {
+import net.galacticraft.plugins.curseforge.curse.ConfigurationContainer;
+import net.galacticraft.plugins.curseforge.curse.RelationContainer;
+import net.galacticraft.plugins.curseforge.curse.RelationType;
+import net.galacticraft.plugins.curseforge.curse.ReleaseType;
 
-	private final Property<String> projectId, changelog, changelogType, releaseType;
+public class CurseUploadExtension implements ConfigurationContainer {
+
+	private final Property<String> apiKey, projectId, changelog, changelogType, releaseType;
+	private final ListProperty<Object> gameVersions;
+	private final RegularFileProperty uploadFile;
+	private final NamedDomainObjectContainer<RelationContainer> relations;
 	
 	@Inject
 	public CurseUploadExtension(final Project project, final ObjectFactory factory) {
-		this.extension = extension;
+		this.apiKey = factory.property(String.class).convention((String) project.findProperty("CURSE_TOKEN"));
+		this.projectId = factory.property(String.class);
+		this.uploadFile = factory.fileProperty();
+        File dir = project.getProjectDir();
+        String changelogContent = "";
+        String changelogExt = "";
+        try {
+            for(File file : dir.listFiles()) {
+            	if (file.isFile()) {
+            		String[] filename = file.getName().split("\\.(?=[^\\.]+$)");
+            		if(filename[0].equalsIgnoreCase("changelog")) {
+            			if(filename[1].equalsIgnoreCase("md"))
+            				changelogExt ="markdown";
+            			else if(filename[1].equalsIgnoreCase("html"))
+            				changelogExt = "html";
+            			else
+            				changelogExt = "text";
+            			changelogContent = Files.asCharSource(file, Charsets.UTF_8).read();
+            		}
+            	}
+            }
+        } catch (Exception e) {}
+        this.changelogType = factory.property(String.class).convention(changelogExt);
+        this.changelog = factory.property(String.class).convention(changelogContent);
+        this.releaseType = factory.property(String.class).convention(ReleaseType.RELEASE.value());
+        this.relations = factory.domainObjectContainer(RelationContainer.class);
+        this.gameVersions = factory.listProperty(Object.class).empty();
 	}
 
+	@Override
+	public Property<String> getProjectId() {
+		return this.projectId;
+	}
+	
+	public RegularFileProperty getUploadFile() {
+		return this.uploadFile;
+	}
+
+	public Property<String> getApiKey() {
+		return this.apiKey;
+	}
+	
+	@Override
+	public Property<String> getReleaseType() {
+		return this.releaseType;
+	}
+
+	@Override
+	public Property<String> getChangelog() {
+		return this.changelog;
+	}
+
+	@Override
+	public Property<String> getChangelogType() {
+		return this.changelogType;
+	}
+	
+	@Override
+	public ListProperty<Object> getGameVersions() {
+		return this.gameVersions;
+	}
+	
+	@Nested
+    public NamedDomainObjectContainer<RelationContainer> getRelations() {
+        return this.relations;
+    }
+
+    public void dependencies(final Action<? super NamedDomainObjectContainer<RelationContainer>> action) {
+        action.execute(this.relations);
+    }
+
+    public void dependency(final String name, final Action<? super RelationContainer> action) {
+        this.relations.register(name, action);
+    }
+	
+    public void requiredDependency(String slugIn) {
+        this.dependency(slugIn, set -> {
+        	set.setType(RelationType.REQUIRED);
+        });
+    }
+    
+    public void embeddedLibrary(String slugIn) {
+        this.dependency(slugIn, set -> {
+        	set.setType(RelationType.EMBEDEDLIB);
+        });
+    }
+
+    public void optionalDependency(String slugIn) {
+        this.dependency(slugIn, set -> {
+        	set.setType(RelationType.OPTIONAL);
+        });
+    }
+    
+    public void tool(String slugIn) {
+        this.dependency(slugIn, set -> {
+        	set.setType(RelationType.TOOL);
+        });
+    }
+    
+    public void incompatible(String slugIn) {
+        this.dependency(slugIn, set -> {
+        	set.setType(RelationType.INCOMPATIBLE);
+        });
+    }
 }

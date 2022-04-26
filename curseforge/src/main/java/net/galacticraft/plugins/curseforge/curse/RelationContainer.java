@@ -23,48 +23,35 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.model;
+package net.galacticraft.plugins.curseforge.curse;
 
-import java.util.List;
+import javax.inject.Inject;
 
-import org.jetbrains.annotations.NotNull;
+import org.gradle.api.Named;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Property;
 
-public interface Developer {
+public class RelationContainer implements Named {
 
-	static @NotNull Builder builder() {
-		return new DeveloperImpl.BuilderImpl();
-	}
+    private final String name;
+    private final Property<String> type;
+	
+    @Inject
+    public RelationContainer(final String name, final ObjectFactory factory) {
+        this.name = name;
+        this.type = factory.property(String.class).convention(RelationType.REQUIRED.value());
+    }
 
-	@NotNull
-	String id();
+    @Override
+    public String getName() {
+        return this.name;
+    }
 
-	@NotNull
-	String name();
+    public Property<String> getType() {
+        return this.type;
+    }
 
-	@NotNull
-	String email();
-
-	@NotNull
-	List<String> roles();
-
-	interface Builder {
-
-		@NotNull
-		Builder from(final Developer developer);
-
-		@NotNull
-		Builder id(final @NotNull String id);
-
-		@NotNull
-		Builder name(final @NotNull String name);
-
-		@NotNull
-		Builder email(final @NotNull String email);
-
-		@NotNull
-		Builder roles(final @NotNull String... roles);
-
-		@NotNull
-		Developer build();
-	}
+    public void setType(final RelationType type) {
+    	this.type.set(type.value());
+    }
 }

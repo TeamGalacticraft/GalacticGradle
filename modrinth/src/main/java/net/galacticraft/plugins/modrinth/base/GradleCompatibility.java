@@ -23,48 +23,21 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.model;
+package net.galacticraft.plugins.modrinth.base;
 
-import java.util.List;
+import org.gradle.api.Project;
+import org.gradle.api.provider.Provider;
 
-import org.jetbrains.annotations.NotNull;
+public class GradleCompatibility {
+	static final boolean HAS_CONVENTION = hasMethod(Project.class, "getConvention");
+	static final boolean HAS_FOR_USE_AT_CONFIGURATION_TIME = hasMethod(Provider.class, "forUseAtConfigurationTime");
 
-public interface Developer {
-
-	static @NotNull Builder builder() {
-		return new DeveloperImpl.BuilderImpl();
-	}
-
-	@NotNull
-	String id();
-
-	@NotNull
-	String name();
-
-	@NotNull
-	String email();
-
-	@NotNull
-	List<String> roles();
-
-	interface Builder {
-
-		@NotNull
-		Builder from(final Developer developer);
-
-		@NotNull
-		Builder id(final @NotNull String id);
-
-		@NotNull
-		Builder name(final @NotNull String name);
-
-		@NotNull
-		Builder email(final @NotNull String email);
-
-		@NotNull
-		Builder roles(final @NotNull String... roles);
-
-		@NotNull
-		Developer build();
+	private static boolean hasMethod(final Class<?> clazz, final String name, final Class<?>... args) {
+		try {
+			clazz.getMethod(name, args);
+			return true;
+		} catch (final NoSuchMethodException ex) {
+			return false;
+		}
 	}
 }

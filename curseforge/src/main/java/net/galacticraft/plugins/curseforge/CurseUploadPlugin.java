@@ -30,11 +30,13 @@ import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.jetbrains.annotations.NotNull;
 
-impnet.galacticraft.plugins.curseforge.internaladle.CurseExtension;
-impnet.galacticraft.plugins.curseforge.internaladle.CurseGradlePlugin;
-import net.galacticraft.common.plugins.GradlePlugin;
+import net.galacticraft.plugins.curseforge.base.Extensions;
+import net.galacticraft.plugins.curseforge.base.GradlePlugin;
+import net.galacticraft.plugins.curseforge.http.OkHttpUtil;
+import net.galacticraft.plugins.curseforge.internal.CurseVersions;
 
 public class CurseUploadPlugin implements GradlePlugin {
 
@@ -44,12 +46,25 @@ public class CurseUploadPlugin implements GradlePlugin {
 	public void apply(@NotNull Project project, @NotNull PluginContainer plugins, @NotNull ExtensionContainer extensions, @NotNull TaskContainer tasks) {
 		this.project = project;
 		
-		this.applyPlugins(project.getPlugins());
+		OkHttpUtil.setup(project);
+		CurseVersions.init();
 		
-		project.getExtensions().create("curse", CurseUploadExtension.class, project.getExtensions().findByType(CurseExtension.class));
-	}
-	
-	private void applyPlugins(PluginContainer plugins) {
-		plugins.apply(CurseGradlePlugin.class);
+		CurseUploadExtension extension = Extensions.findOrCreate(extensions, "curseforge", CurseUploadExtension.class, project, project.getObjects());
+		
+		tasks.register("publishToCurseForge", CurseUploadTask.class, task -> {
+			task.setGroup("galactic-gradle");
+			task.setDescription("Publishes the mod artifact to the CurseForge Platform");
+			task.dependsOn(tasks.named("build"));
+		});
+		
+		project.getGradle().afterProject(set -> {
+			project.getTasks().withType(AbstractArchiveTask.class, task -> {
+				extension.getUploadFile().set(task.getArchiveFile());
+			});
+			if(!extension.getApiKey().isPresent()) {
+				extension.getApiKey().set((String) project.findProperty("CURSE_TOKEN"));
+			}
+			OkHttpUtil.instance.addHeader("X-Api-Token", extension.getApiKey().get());
+		});
 	}
 }

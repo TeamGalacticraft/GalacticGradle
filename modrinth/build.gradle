@@ -3,7 +3,6 @@ plugins {
     id "org.shipkit.shipkit-changelog"
     id "com.gradle.plugin-publish"
     id "com.adarshr.test-logger"
-	id "com.github.johnrengelman.shadow" version "7.1.2"
 }
 
 sourceSets {
@@ -11,20 +10,8 @@ sourceSets {
 }
 
 dependencies {
-	compileOnly("net.minecraftforge.gradle:ForgeGradle:5.1.31") {
-		transitive = false
-	}
-	compileOnly('net.minecraftforge:artifactural:3.0.8') {
-        transitive = false
-    }
 	implementation 'com.modrinth.minotaur:Minotaur:2.1.2'
-	implementation 'com.google.code.gson:gson:2.9.0'
-}
-
-shadowJar {
-	classifier = null
-	project.configurations.implementation.canBeResolved = true
-	configurations = [project.configurations.implementation]
+	implementation "com.google.guava:guava:31.0.1-jre"
 }
 
 gradlePlugin {
@@ -53,11 +40,3 @@ tasks.withType(Javadoc) {
 publishPlugins {
     onlyIf notSnapshot
 }
-
-task pub() {
-	project.publishing.publications.each {
-		println(it)
-	}
-}
-
-build.dependsOn project(':common').build

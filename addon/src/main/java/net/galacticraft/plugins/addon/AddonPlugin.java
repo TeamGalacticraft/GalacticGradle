@@ -33,7 +33,6 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 
-import net.galacticraft.common.Constants;
 import net.galacticraft.plugins.addon.util.ForgeGradle;
 import net.minecraftforge.gradle.userdev.DependencyManagementExtension;
 

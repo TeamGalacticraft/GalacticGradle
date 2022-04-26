@@ -23,48 +23,25 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.model;
+package net.galacticraft.plugins.curseforge.base;
 
-import java.util.List;
+public class BooleanProperty {
 
-import org.jetbrains.annotations.NotNull;
-
-public interface Developer {
-
-	static @NotNull Builder builder() {
-		return new DeveloperImpl.BuilderImpl();
+	private Boolean value;
+	
+	public Boolean getValue() {
+		return value;
 	}
 
-	@NotNull
-	String id();
-
-	@NotNull
-	String name();
-
-	@NotNull
-	String email();
-
-	@NotNull
-	List<String> roles();
-
-	interface Builder {
-
-		@NotNull
-		Builder from(final Developer developer);
-
-		@NotNull
-		Builder id(final @NotNull String id);
-
-		@NotNull
-		Builder name(final @NotNull String name);
-
-		@NotNull
-		Builder email(final @NotNull String email);
-
-		@NotNull
-		Builder roles(final @NotNull String... roles);
-
-		@NotNull
-		Developer build();
+	public BooleanProperty(Object object) {
+		this.value = Boolean.parseBoolean((String) object);
+	}
+	
+	public boolean isTrue() {
+		return this.value.booleanValue();
+	}
+	
+	public boolean isFalse() {
+		return !this.value.booleanValue();
 	}
 }
