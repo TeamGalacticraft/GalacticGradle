@@ -57,7 +57,13 @@ public class CurseUploadTask extends DefaultTask {
     	}
     	
     	final File file = resolveFile(this.getProject(), extension.getUploadFile().get());
-    	this.upload(metadata, file);
+    	if(this.extension.getDebug().get()) {
+    		this.getProject().getLogger().lifecycle("Full data to be sent for upload:");
+    		this.getProject().getLogger().lifecycle("{}", Util.getPrettyPrintGson().toJson(metadata));
+    		return;
+    	} else {
+    		this.upload(metadata, file);
+		}
     }
     
     public void upload(Metadata metadata, File uploadFile) {

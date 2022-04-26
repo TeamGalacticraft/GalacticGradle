@@ -7,12 +7,18 @@ import java.io.InputStreamReader;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class Util {
 	private static final Gson gson = new Gson();
+	private static final Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
 	
 	public static Gson getGson() {
 		return gson;
+	}
+	
+	public static Gson getPrettyPrintGson() {
+		return prettyGson;
 	}
 	
     public static String fromResourceAsString(String fileName) {

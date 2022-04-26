@@ -13,11 +13,19 @@ dependencies {
 gradlePlugin {
     plugins {
         uploadPlugin {
-            id = 'net.galacticraft.gradle.upload'
+            id = 'net.galacticraft.gradle.publishing'
             description = 'Applies both the CurseForge & Modrinth Upload plugins'
-            implementationClass = 'net.galacticraft.plugins.upload.UploadingPlugin'
+            implementationClass = 'net.galacticraft.plugins.publishing.ModPublihingPlugin'
         }
     }
+}
+
+jar {
+	from project(":modrinth").sourceSets.main.java.srcDirs
+	from project(":curseforge").sourceSets.main.java.srcDirs
+	
+	dependsOn project(':modrinth').tasks.jar
+	dependsOn project(':curseforge').tasks.jar
 }
 
 pluginBundle {
@@ -28,13 +36,4 @@ pluginBundle {
 
 publishPlugins {
     onlyIf notSnapshot
-}
-
-license {
-	header = rootProject.file("HEADER.txt")
-	properties {
-		name = "${name}"
-		organization = "${organization}"
-		url = "${url}"
-	}
 }

@@ -9,15 +9,31 @@ sourceSets {
 	test.java.srcDirs = ['src/test/java']
 }
 
+configurations {
+	embed {
+		canBeResolved = true
+	}
+	compileOnly.extendsFrom embed
+}
+
 dependencies {
-	implementation 'com.modrinth.minotaur:Minotaur:2.1.2'
+	embed 'com.modrinth.minotaur:Minotaur:2.1.2'
 	implementation "com.google.guava:guava:31.0.1-jre"
+	implementation 'com.google.code.gson:gson:2.9.0'
+	implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.13'
+	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+}
+
+jar {
+	from(configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }) {
+		include "com/modrinth/minotaur/**"
+	}
 }
 
 gradlePlugin {
     plugins {
         modrinthPlugin {
-            id = 'net.galacticraft.gradle.upload.modrinth'
+            id = 'net.galacticraft.gradle.publishing.modrinth'
             description = 'Modrinth plugin for publishing builds to the website'
             implementationClass = 'net.galacticraft.plugins.modrinth.ModrinthUploadPlugin'
         }

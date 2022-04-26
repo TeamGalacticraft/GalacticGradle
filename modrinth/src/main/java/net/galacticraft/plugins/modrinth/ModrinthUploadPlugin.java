@@ -34,18 +34,13 @@ import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.jetbrains.annotations.NotNull;
 
-import com.modrinth.minotaur.ModrinthExtension;
-import com.modrinth.minotaur.TaskModrinthUpload;
-import com.modrinth.minotaur.dependencies.Dependency;
-
 import net.galacticraft.plugins.modrinth.base.Extensions;
 import net.galacticraft.plugins.modrinth.base.GradlePlugin;
-import net.galacticraft.plugins.modrinth.model.DependencyContainer;
 import net.galacticraft.plugins.modrinth.model.type.VersionType;
 
 public class ModrinthUploadPlugin implements GradlePlugin {
 	private @MonotonicNonNull Project project;
-	
+		
 	@Override
 	public void apply(@NotNull Project project, @NotNull PluginContainer plugins, @NotNull ExtensionContainer extensions, @NotNull TaskContainer tasks) {
 		this.project = project;
@@ -55,43 +50,24 @@ public class ModrinthUploadPlugin implements GradlePlugin {
 		}
 
 		ModrinthUploadExtension extension = Extensions.findOrCreate(extensions, "modrinth", ModrinthUploadExtension.class, project, project.getObjects());
-		
-		Extensions.findOrCreate(extensions, "minotaur", ModrinthExtension.class, project);
-				
-		tasks.register("publishToModrinth", TaskModrinthUpload.class, task -> {
+
+		tasks.register("publishToModrinth", ModrinthUploadTask.class, task -> {
 			task.setGroup("galactic-gradle");
 			task.setDescription("Publishes the mod artifact to the Modrinth Mod Platform");
 			task.dependsOn(tasks.named("build"));
 		});
 		
-		project.getGradle().afterProject(set -> {
+		project.afterEvaluate(set -> {
 			project.getTasks().withType(AbstractArchiveTask.class, task -> {
 				extension.getUploadFile().set(task.getArchiveFile());
 			});
 			
-			String version = extension.getVersionNumnber().get();
+			String version = extension.getVersionNumber().get();
 	        for(String val : VersionType.CONSTANTS) {
 	        	if(version.contains(val)) {
 	        		extension.getVersionType().set(val);
 	        	}
 	        }
-
-			extensions.configure(ModrinthExtension.class, e -> {
-				e.getToken().set((String) project.findProperty("MODRINTH_TOKEN"));
-				e.getProjectId().set(extension.getProjectId().get());
-				e.getVersionNumber().set(extension.getVersionNumnber().get());
-				e.getVersionType().set(extension.getVersionType().get());
-				e.getDebugMode().set(extension.getDebug().get());
-				e.getFailSilently().set(false);
-				if(!extension.getChangelog().get().isEmpty()) {
-					e.getChangelog().set(extension.getChangelog());
-				}
-				for(DependencyContainer dep : extension.getDependencies()) {
-					Dependency dependency = new Dependency(dep.getName(), dep.getType().get());
-					e.getDependencies().add(dependency);
-				}
-				e.getUploadFile().set(extension.getUploadFile().get());
-			});
 		});
 	}
 }

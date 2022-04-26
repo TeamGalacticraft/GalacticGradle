@@ -26,7 +26,7 @@ dependencies {
 gradlePlugin {
     plugins {
         curseforgePlugin {
-            id = 'net.galacticraft.gradle.upload.curse'
+            id = 'net.galacticraft.gradle.publishing.curseforge'
             description = 'Gradle plugin to upload artifacts to CurseForge'
             implementationClass = 'net.galacticraft.plugins.curseforge.CurseUploadPlugin'
         }

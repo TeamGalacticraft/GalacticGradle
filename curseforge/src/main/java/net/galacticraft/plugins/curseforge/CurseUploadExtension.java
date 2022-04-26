@@ -49,6 +49,7 @@ import net.galacticraft.plugins.curseforge.curse.ReleaseType;
 public class CurseUploadExtension implements ConfigurationContainer {
 
 	private final Property<String> apiKey, projectId, changelog, changelogType, releaseType;
+	private final Property<Boolean> debug;
 	private final ListProperty<Object> gameVersions;
 	private final RegularFileProperty uploadFile;
 	private final NamedDomainObjectContainer<RelationContainer> relations;
@@ -58,6 +59,7 @@ public class CurseUploadExtension implements ConfigurationContainer {
 		this.apiKey = factory.property(String.class).convention((String) project.findProperty("CURSE_TOKEN"));
 		this.projectId = factory.property(String.class);
 		this.uploadFile = factory.fileProperty();
+		this.debug = factory.property(Boolean.class).convention(false);
         File dir = project.getProjectDir();
         String changelogContent = "";
         String changelogExt = "";
@@ -82,6 +84,14 @@ public class CurseUploadExtension implements ConfigurationContainer {
         this.releaseType = factory.property(String.class).convention(ReleaseType.RELEASE.value());
         this.relations = factory.domainObjectContainer(RelationContainer.class);
         this.gameVersions = factory.listProperty(Object.class).empty();
+	}
+	
+	public Property<Boolean> getDebug() {
+		return this.debug;
+	}
+	
+	public void debug() {
+		this.debug.set(true);
 	}
 
 	@Override

@@ -42,10 +42,10 @@ public interface ConfigurationContainer {
 		this.getDebug().set(true);
 	}
 	
-	Property<String> getVersionNumnber();
+	Property<String> getVersionNumber();
 	
 	default void version(final String version) {
-		this.getVersionNumnber().set(version);
+		this.getVersionNumber().set(version);
 	}
 	
 	Property<String> getVersionType();

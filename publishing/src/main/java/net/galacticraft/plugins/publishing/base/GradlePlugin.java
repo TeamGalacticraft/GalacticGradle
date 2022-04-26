@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.upload.base;
+package net.galacticraft.plugins.publishing.base;
 
 import javax.annotation.Nonnull;
 

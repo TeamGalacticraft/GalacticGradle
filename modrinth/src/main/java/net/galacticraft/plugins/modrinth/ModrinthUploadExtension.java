@@ -49,7 +49,7 @@ import net.galacticraft.plugins.modrinth.model.type.VersionType;
 
 public class ModrinthUploadExtension implements ConfigurationContainer {
 
-	private final Property<String> projectId, versionNumber, versionType, changelog;
+	private final Property<String> token, projectId, versionNumber, versionName, versionType, changelog;
 	private final Property<Boolean> debug;
 	private final ListProperty<String> gameVersions, loaders;
 	private final RegularFileProperty uploadFile;
@@ -57,6 +57,7 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 
 	@Inject
 	public ModrinthUploadExtension(final Project project, final ObjectFactory factory) {
+		this.token = project.getObjects().property(String.class).convention((String) project.findProperty("MODRINTH_TOKEN"));
 		this.projectId = factory.property(String.class);
 		this.debug = factory.property(Boolean.class).convention(false);
         this.gameVersions = factory.listProperty(String.class).empty();
@@ -65,6 +66,7 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
         
         Provider<String> version = project.provider(() -> project.getVersion() == null ? null : String.valueOf(project.getVersion()));
         this.versionNumber = factory.property(String.class).convention(version);
+        this.versionName = project.getObjects().property(String.class);
         String type = VersionType.RELEASE.value();
         this.versionType = factory.property(String.class).convention(type);
         
@@ -85,6 +87,10 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 		return this.projectId;
 	}
 	
+    public Property<String> getToken() {
+        return this.token;
+    }
+	
 	public RegularFileProperty getUploadFile() {
 		return this.uploadFile;
 	}
@@ -95,9 +101,13 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 	}
 
 	@Override
-	public Property<String> getVersionNumnber() {
+	public Property<String> getVersionNumber() {
 		return this.versionNumber;
 	}
+	
+    public Property<String> getVersionName() {
+        return this.versionName;
+    }
 
 	@Override
 	public Property<String> getVersionType() {
@@ -128,7 +138,7 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
         action.execute(this.dependencies);
     }
 
-    public void dependency(final String name, final Action<? super DependencyContainer> action) {
+    public void dependency(final String name, final Action<DependencyContainer> action) {
         this.dependencies.register(name, action);
     }
 }
