@@ -18,6 +18,7 @@ gradlePlugin {
     plugins {
         conventionPlugin {
             id = 'net.galacticraft.gradle.dev'
+			displayName = 'Galacticraft Convention'
             description = 'Gradle conventions for TeamGalacticraft organization projects'
             implementationClass = 'net.galacticraft.plugins.convention.ConventionPlugin'
         }

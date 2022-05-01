@@ -25,21 +25,19 @@
 
 package net.galacticraft.plugins.modrinth.model.type;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public enum VersionType {
 
 	RELEASE("release"), BETA("beta"), ALPHA("alpha");
 
 	private final String value;
-	public final static List<String> CONSTANTS = new ArrayList<>();
-	public final static List<VersionType> VALID_TYPES = new ArrayList<>();
+	public final static Map<String, VersionType> CONSTANTS = new HashMap<String, VersionType>();
 
 	static {
 		for (VersionType c : values()) {
-			CONSTANTS.add(c.value);
-			VALID_TYPES.add(c);
+			CONSTANTS.put(c.value, c);
 		}
 	}
 

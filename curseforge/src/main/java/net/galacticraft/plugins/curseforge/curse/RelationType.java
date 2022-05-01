@@ -28,12 +28,19 @@ package net.galacticraft.plugins.curseforge.curse;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.annotations.SerializedName;
+
 public enum RelationType {
 
+    @SerializedName("embeddedLibrary")
 	EMBEDEDLIB("embeddedLibrary"),
+	@SerializedName("optionalDependency")
 	OPTIONAL("optionalDependency"),
+	@SerializedName("requiredDependency")
 	REQUIRED("requiredDependency"),
+	@SerializedName("tool")
 	TOOL("tool"),
+	@SerializedName("incompatible")
 	INCOMPATIBLE("incompatible");
 
 	private final String value;

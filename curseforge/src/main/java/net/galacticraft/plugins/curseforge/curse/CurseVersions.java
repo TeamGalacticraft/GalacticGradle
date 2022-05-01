@@ -1,6 +1,10 @@
-package net.galacticraft.plugins.curseforge.internal;
+package net.galacticraft.plugins.curseforge.curse;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -10,9 +14,11 @@ import gnu.trove.map.hash.TObjectIntHashMap;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 import lombok.Getter;
+import net.galacticraft.plugins.curseforge.util.Util;
 
 public class CurseVersions {
 	private static final TObjectIntMap<String> gameVersions = new TObjectIntHashMap<String>();
+	private static final Map<Integer, String> gameVersionsReversed = new HashMap<>();
 
 	public static void init() {
 		gameVersions.clear();
@@ -33,8 +39,28 @@ public class CurseVersions {
 		for (GameVersion version : versions) {
 			if (validVersionTypes.contains(version.getGameVersionTypeID())) {
 				gameVersions.put(version.getName(), version.getId());
+				gameVersionsReversed.put(version.getId(), version.getName());
 			}
 		}
+	}
+	
+	public static String[] checkVersionsToAdd(String[] strings) {
+		Set<String> versions = new HashSet<>();
+		for (String string : strings) {
+			if(gameVersions.keySet().contains(string)) {
+				versions.add(string);
+			}
+		}
+		return Arrays.stream(versions.toArray()).toArray(String[]::new);
+	}
+	
+	public static String[] resolvedIdsToStrings(final Iterable<Integer> ids) {
+		Set<String> versions = new HashSet<>();
+		for (Integer id : ids) {
+			String name = gameVersionsReversed.get(id);
+			versions.add(name);
+		}
+		return Arrays.stream(versions.toArray()).toArray(String[]::new);
 	}
 
 	public static Integer[] resolveGameVersion(final Iterable<Object> objects) {

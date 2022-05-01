@@ -25,65 +25,39 @@
 
 package net.galacticraft.plugins.curseforge;
 
-import java.io.File;
-
 import javax.inject.Inject;
 
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectContainer;
-import org.gradle.api.Project;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
-
 import net.galacticraft.plugins.curseforge.curse.ConfigurationContainer;
-import net.galacticraft.plugins.curseforge.curse.RelationContainer;
-import net.galacticraft.plugins.curseforge.curse.RelationType;
-import net.galacticraft.plugins.curseforge.curse.ReleaseType;
+import net.galacticraft.plugins.curseforge.curse.FileArtifact;
 
 public class CurseUploadExtension implements ConfigurationContainer {
 
-	private final Property<String> apiKey, projectId, changelog, changelogType, releaseType;
+	private final Property<String> apiKey, projectId, changelog, changelogType, releaseType, displayName;
 	private final Property<Boolean> debug;
 	private final ListProperty<Object> gameVersions;
-	private final RegularFileProperty uploadFile;
-	private final NamedDomainObjectContainer<RelationContainer> relations;
+	//private final ListProperty<FileArtifact> extraFiles;
+	private final Property<FileArtifact> mainFile;
+	private final RelationsConfiguation relations;
 	
 	@Inject
-	public CurseUploadExtension(final Project project, final ObjectFactory factory) {
-		this.apiKey = factory.property(String.class).convention((String) project.findProperty("CURSE_TOKEN"));
+	public CurseUploadExtension(final ObjectFactory factory) {
+		this.apiKey = factory.property(String.class);
 		this.projectId = factory.property(String.class);
-		this.uploadFile = factory.fileProperty();
+		this.mainFile = factory.property(FileArtifact.class);
 		this.debug = factory.property(Boolean.class).convention(false);
-        File dir = project.getProjectDir();
-        String changelogContent = "";
-        String changelogExt = "";
-        try {
-            for(File file : dir.listFiles()) {
-            	if (file.isFile()) {
-            		String[] filename = file.getName().split("\\.(?=[^\\.]+$)");
-            		if(filename[0].equalsIgnoreCase("changelog")) {
-            			if(filename[1].equalsIgnoreCase("md"))
-            				changelogExt ="markdown";
-            			else if(filename[1].equalsIgnoreCase("html"))
-            				changelogExt = "html";
-            			else
-            				changelogExt = "text";
-            			changelogContent = Files.asCharSource(file, Charsets.UTF_8).read();
-            		}
-            	}
-            }
-        } catch (Exception e) {}
-        this.changelogType = factory.property(String.class).convention(changelogExt);
-        this.changelog = factory.property(String.class).convention(changelogContent);
-        this.releaseType = factory.property(String.class).convention(ReleaseType.RELEASE.value());
-        this.relations = factory.domainObjectContainer(RelationContainer.class);
+        this.changelogType = factory.property(String.class);
+        this.changelog = factory.property(String.class);
+        this.releaseType = factory.property(String.class);
+        this.displayName = factory.property(String.class);
+        this.relations = factory.newInstance(RelationsConfiguation.class, factory);
         this.gameVersions = factory.listProperty(Object.class).empty();
+        //this.extraFiles = factory.listProperty(FileArtifact.class).empty();
 	}
 	
 	public Property<Boolean> getDebug() {
@@ -97,10 +71,6 @@ public class CurseUploadExtension implements ConfigurationContainer {
 	@Override
 	public Property<String> getProjectId() {
 		return this.projectId;
-	}
-	
-	public RegularFileProperty getUploadFile() {
-		return this.uploadFile;
 	}
 
 	public Property<String> getApiKey() {
@@ -127,46 +97,29 @@ public class CurseUploadExtension implements ConfigurationContainer {
 		return this.gameVersions;
 	}
 	
+	@Override
+	public Property<String> getDisplayName() {
+		return this.displayName;
+	}
+	
+	@Override
+	public Property<FileArtifact> getMainFile() {
+		return this.mainFile;
+	}
+
+//	@Override
+//	public ListProperty<FileArtifact> getExtraFiles() {
+//		return this.extraFiles;
+//	}
+	
 	@Nested
-    public NamedDomainObjectContainer<RelationContainer> getRelations() {
+    public RelationsConfiguation getRelationsContainer() {
         return this.relations;
     }
 
-    public void dependencies(final Action<? super NamedDomainObjectContainer<RelationContainer>> action) {
-        action.execute(this.relations);
-    }
-
-    public void dependency(final String name, final Action<? super RelationContainer> action) {
-        this.relations.register(name, action);
-    }
-	
-    public void requiredDependency(String slugIn) {
-        this.dependency(slugIn, set -> {
-        	set.setType(RelationType.REQUIRED);
-        });
+    public void dependencies(final Action<? super RelationsConfiguation> action) {
+        action.execute(this.getRelationsContainer());
     }
     
-    public void embeddedLibrary(String slugIn) {
-        this.dependency(slugIn, set -> {
-        	set.setType(RelationType.EMBEDEDLIB);
-        });
-    }
-
-    public void optionalDependency(String slugIn) {
-        this.dependency(slugIn, set -> {
-        	set.setType(RelationType.OPTIONAL);
-        });
-    }
     
-    public void tool(String slugIn) {
-        this.dependency(slugIn, set -> {
-        	set.setType(RelationType.TOOL);
-        });
-    }
-    
-    public void incompatible(String slugIn) {
-        this.dependency(slugIn, set -> {
-        	set.setType(RelationType.INCOMPATIBLE);
-        });
-    }
 }

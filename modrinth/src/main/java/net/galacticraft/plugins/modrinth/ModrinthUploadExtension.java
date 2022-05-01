@@ -25,61 +25,40 @@
 
 package net.galacticraft.plugins.modrinth;
 
-import java.io.File;
-import java.io.IOException;
-
 import javax.inject.Inject;
 
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectContainer;
-import org.gradle.api.Project;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Nested;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
-
 import net.galacticraft.plugins.modrinth.model.ConfigurationContainer;
-import net.galacticraft.plugins.modrinth.model.DependencyContainer;
-import net.galacticraft.plugins.modrinth.model.type.VersionType;
+import net.galacticraft.plugins.modrinth.model.DependenciesConfiguation;
 
 public class ModrinthUploadExtension implements ConfigurationContainer {
 
 	private final Property<String> token, projectId, versionNumber, versionName, versionType, changelog;
 	private final Property<Boolean> debug;
 	private final ListProperty<String> gameVersions, loaders;
-	private final RegularFileProperty uploadFile;
-	private final NamedDomainObjectContainer<DependencyContainer> dependencies;
+	private final Property<Object> uploadFile;
+	//private final ListProperty<Object> additionalFiles;
+	private final DependenciesConfiguation dependencies;
 
 	@Inject
-	public ModrinthUploadExtension(final Project project, final ObjectFactory factory) {
-		this.token = project.getObjects().property(String.class).convention((String) project.findProperty("MODRINTH_TOKEN"));
+	public ModrinthUploadExtension(final ObjectFactory factory) {
+		this.token =factory.property(String.class);
 		this.projectId = factory.property(String.class);
 		this.debug = factory.property(Boolean.class).convention(false);
         this.gameVersions = factory.listProperty(String.class).empty();
         this.loaders = factory.listProperty(String.class).empty();
-        this.uploadFile = factory.fileProperty();
-        
-        Provider<String> version = project.provider(() -> project.getVersion() == null ? null : String.valueOf(project.getVersion()));
-        this.versionNumber = factory.property(String.class).convention(version);
-        this.versionName = project.getObjects().property(String.class);
-        String type = VersionType.RELEASE.value();
-        this.versionType = factory.property(String.class).convention(type);
-        
-        this.dependencies = factory.domainObjectContainer(DependencyContainer.class);
-        
-        File changelogFile = new File(project.getProjectDir(), "changelog.md");
-        String changelogContent = "";
-        if(changelogFile.exists()) {
-        	try {
-        		changelogContent = Files.asCharSource(changelogFile, Charsets.UTF_8).read();
-        	} catch (IOException e) {}
-        }
-        this.changelog = factory.property(String.class).convention(changelogContent);
+        this.uploadFile = factory.property(Object.class);
+        //this.additionalFiles = factory.listProperty(Object.class).empty();
+        this.versionNumber = factory.property(String.class);
+        this.versionName = factory.property(String.class);
+        this.versionType = factory.property(String.class);
+        this.dependencies = factory.newInstance(DependenciesConfiguation.class, factory);
+        this.changelog = factory.property(String.class);
 	}
 
 	@Override
@@ -91,9 +70,15 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
         return this.token;
     }
 	
-	public RegularFileProperty getUploadFile() {
+    @Override
+	public Property<Object> getMainFile() {
 		return this.uploadFile;
 	}
+    
+//	@Override
+//	public ListProperty<Object> getAdditionalFiles() {
+//		return this.additionalFiles;
+//	}
 
 	@Override
 	public Property<Boolean> getDebug() {
@@ -130,15 +115,11 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 	}
 	
 	@Nested
-    public NamedDomainObjectContainer<DependencyContainer> getDependencies() {
+    public DependenciesConfiguation getDependenciesContainer() {
         return this.dependencies;
     }
 
-    public void dependencies(final Action<? super NamedDomainObjectContainer<DependencyContainer>> action) {
+    public void dependencies(final Action<? super DependenciesConfiguation> action) {
         action.execute(this.dependencies);
-    }
-
-    public void dependency(final String name, final Action<DependencyContainer> action) {
-        this.dependencies.register(name, action);
     }
 }

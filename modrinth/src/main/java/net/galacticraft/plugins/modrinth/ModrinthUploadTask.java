@@ -28,7 +28,6 @@ import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.modrinth.minotaur.ModrinthExtension;
 import com.modrinth.minotaur.compat.FabricLoomCompatibility;
 import com.modrinth.minotaur.dependencies.Dependency;
 import com.modrinth.minotaur.dependencies.VersionDependency;
@@ -36,63 +35,28 @@ import com.modrinth.minotaur.request.VersionData;
 import com.modrinth.minotaur.responses.ResponseError;
 import com.modrinth.minotaur.responses.ResponseUpload;
 
-import net.galacticraft.plugins.modrinth.model.DependencyContainer;
+import net.galacticraft.plugins.modrinth.model.dependency.DependencyContainer;
 
+/**
+ * Slightly modified version
+ * @see 
+ * 	<a href="https://github.com/modrinth/minotaur/blob/master/src/main/java/com/modrinth/minotaur/TaskModrinthUpload.java">TaskModrinthUpload</a>
+ */
 public class ModrinthUploadTask extends DefaultTask {
-    /**
-     * Constant gson instance used for deserializing the API responses when files are uploaded.
-     */
-    private static final Gson GSON = new Gson();
-    
-    private static final Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
 
-    /**
-     * The extension used for getting the data supplied in the buildscript.
-     */
+    private static final Gson GSON = new Gson();
+    private static final Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
     private final ModrinthUploadExtension extension = getProject().getExtensions().getByType(ModrinthUploadExtension.class);
 
-    /**
-     * The response from the API when the file was uploaded successfully. Provided as a utility for those manually
-     * creating their upload task.
-     */
     @Nullable
     public ResponseUpload uploadInfo = null;
 
-    /**
-     * The response from the API when the file failed to upload. Provided as a utility for those manually creating their
-     * upload task.
-     */
     @Nullable
     public ResponseError errorInfo = null;
 
-    /**
-     * Checks if the upload was successful or not. Provided as a utility for those manually creating their upload task.
-     *
-     * @return Whether the file was successfully uploaded.
-     */
-    public boolean wasUploadSuccessful() {
-        return this.uploadInfo != null && this.errorInfo == null;
-    }
-
-    /**
-     * Defines what to do when the Modrinth upload task is invoked.
-     * <ol>
-     *   <li>Attempts to automatically resolve various metadata items if not specified, throwing an exception if some
-     *   things still don't have anything set</li>
-     *   <li>Resolves each file or task to be uploaded, ensuring they're all valid</li>
-     *   <li>Uploads these files to the Modrinth API under a new version</li>
-     * </ol>
-     * This is all in a try/catch block so that, if {@link ModrinthExtension#getFailSilently()} is enabled, it won't
-     * fail the build if it fails to upload the version to Modrinth.
-     */
     @TaskAction
     public void apply() {
         try {
-            // Add version number if it's null
-            if (extension.getVersionNumber().getOrNull() == null) {
-                extension.getVersionNumber().set(this.getProject().getVersion().toString());
-            }
-
             // Add version name if it's null
             if (extension.getVersionName().getOrNull() == null) {
                 extension.getVersionName().set(extension.getVersionNumber().get());
@@ -107,10 +71,11 @@ public class ModrinthUploadTask extends DefaultTask {
             if (extension.getGameVersions().get().isEmpty()) {
                 throw new GradleException("Cannot upload to Modrinth: no game versions specified!");
             }
-
-            this.addLoaderForPlugin("net.minecraftforge.gradle", "forge");
-            this.addLoaderForPlugin("fabric-loom", "fabric");
-            this.addLoaderForPlugin("org.quiltmc.loom", "quilt");
+            if(extension.getLoaders().get().isEmpty()) {
+                this.addLoaderForPlugin("net.minecraftforge.gradle", "forge");
+                this.addLoaderForPlugin("fabric-loom", "fabric");
+                this.addLoaderForPlugin("org.quiltmc.loom", "quilt");	
+            }
 
             if (extension.getLoaders().get().isEmpty()) {
                 throw new GradleException("Cannot upload to Modrinth: no loaders specified!");
@@ -118,7 +83,7 @@ public class ModrinthUploadTask extends DefaultTask {
 
             List<File> filesToUpload = new ArrayList<>();
 
-            final Object primaryFile = extension.getUploadFile().get();
+            final Object primaryFile = extension.getMainFile().get();
             final File file = resolveFile(this.getProject(), primaryFile);
 
             // Ensure the file actually exists before trying to upload it.
@@ -141,12 +106,6 @@ public class ModrinthUploadTask extends DefaultTask {
         }
     }
 
-    /**
-     * Uploads a file using the provided configuration.
-     *
-     * @param files    The files to upload.
-     * @throws IOException Whenever something goes wrong wit uploading the file.
-     */
     public void upload(List<File> files) throws IOException {
         final HttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.IGNORE_COOKIES).build()).build();
         final HttpPost post = new HttpPost(this.getUploadEndpoint());
@@ -169,11 +128,13 @@ public class ModrinthUploadTask extends DefaultTask {
         data.setVersionType(extension.getVersionType().get().toLowerCase(Locale.ROOT));
         data.setGameVersions(extension.getGameVersions().get());
         data.setLoaders(extension.getLoaders().get());
-        List<Dependency> depednencies = new ArrayList<>();
-        for(DependencyContainer dep : extension.getDependencies()) {
-        	depednencies.add(new VersionDependency(dep.getName(), dep.getType().get()));
+        if(extension.getDependenciesContainer().getDependencies().size() > 0) {
+            List<Dependency> depednencies = new ArrayList<>();
+            for(DependencyContainer dep : extension.getDependenciesContainer().getDependencies()) {
+            	depednencies.add(new VersionDependency(dep.getName(), dep.getType().get()));
+            }
+            data.setDependencies(depednencies);
         }
-        data.setDependencies(depednencies);
         data.setFileParts(fileParts);
         data.setPrimaryFile("0"); // The primary file will always be of the first index in the list
 
@@ -210,25 +171,11 @@ public class ModrinthUploadTask extends DefaultTask {
         }
     }
 
-    /**
-     * Provides the upload API endpoint to use.
-     *
-     * @return The upload API endpoint.
-     */
     private String getUploadEndpoint() {
         String apiUrl = "https://api.modrinth.com/v2";
         return apiUrl + (apiUrl.endsWith("/") ? "" : "/") + "version";
     }
 
-    /**
-     * Attempts to resolve a file using an arbitrary object provided by a user defined gradle
-     * task.
-     *
-     * @param project  The project instance. This is used as a last resort to resolve the file using Gradle's built-in
-     *                 handling.
-     * @param in       The arbitrary input object from the user.
-     * @return A file handle for the resolved input. If the input can not be resolved this will be null or the fallback.
-     */
     @Nullable
     private static File resolveFile(Project project, Object in) {
         // If input or project is null we can't really do anything...
@@ -261,20 +208,13 @@ public class ModrinthUploadTask extends DefaultTask {
         return project.file(in);
     }
 
-    /**
-     * Attempts to detect the game version by detecting ForgeGradle data in the build environment.
-     */
     private void detectGameVersionForge() {
         Project project = this.getProject();
         ModrinthUploadExtension extension = project.getExtensions().getByType(ModrinthUploadExtension.class);
 
         try {
             final ExtraPropertiesExtension extraProps = project.getExtensions().getExtraProperties();
-
-            // ForgeGradle will store the game version here.
-            // https://github.com/MinecraftForge/ForgeGradle/blob/7ca294b2c1f57be675c11a6164bc2e07a41802f1/src/userdev/java/net/minecraftforge/gradle/userdev/MinecraftUserRepo.java#L199
             if (extraProps.has("MC_VERSION")) {
-                //noinspection ConstantConditions
                 final String forgeGameVersion = extraProps.get("MC_VERSION").toString();
 
                 if (forgeGameVersion != null && !forgeGameVersion.isEmpty()) {
@@ -290,9 +230,6 @@ public class ModrinthUploadTask extends DefaultTask {
         }
     }
 
-    /**
-     * Attempts to detect the game version by detecting Loom data in the build environment.
-     */
     private void detectGameVersionFabric() {
         Project project = this.getProject();
         ModrinthUploadExtension extension = this.getProject().getExtensions().getByType(ModrinthUploadExtension.class);
@@ -315,12 +252,6 @@ public class ModrinthUploadTask extends DefaultTask {
         }
     }
 
-    /**
-     * Applies a mod loader automatically if a plugin with the specified name has been applied.
-     *
-     * @param pluginName The plugin to search for.
-     * @param loaderName The mod loader to apply.
-     */
     private void addLoaderForPlugin(String pluginName, String loaderName) {
         try {
             final AppliedPlugin plugin = this.getProject().getPluginManager().findPlugin(pluginName);

@@ -16,6 +16,7 @@ gradlePlugin {
     plugins {
         addonPlugin {
             id = 'net.galacticraft.gradle.addon'
+			displayName = 'Galacticraft Addon Development'
             description = 'Gradle Plugin for developing Galacticraft Addons'
             implementationClass = 'net.galacticraft.plugins.addon.AddonPlugin'
         }

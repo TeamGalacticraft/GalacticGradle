@@ -23,27 +23,28 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.modrinth.model;
+package net.galacticraft.plugins.modrinth.model.dependency;
 
 import javax.inject.Inject;
 
-import org.gradle.api.Named;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 
+import net.galacticraft.plugins.modrinth.model.api.ModDependency;
 import net.galacticraft.plugins.modrinth.model.type.DependencyType;
 
-public class DependencyContainer implements Named {
+public class DependencyContainer implements ModDependency {
 
     private final String name;
     private final Property<String> version;
     private final Property<String> type;
+    
 	
     @Inject
     public DependencyContainer(final String name, final ObjectFactory factory) {
         this.name = name;
         this.version = factory.property(String.class);
-        this.type = factory.property(String.class).convention(DependencyType.REQUIRED.value());
+        this.type = factory.property(String.class);
     }
 
     @Override
@@ -61,6 +62,10 @@ public class DependencyContainer implements Named {
 
     public Property<String> getType() {
         return this.type;
+    }
+    
+    public void required() {
+    	this.type.set(DependencyType.REQUIRED.value());
     }
 
     public void optional() {

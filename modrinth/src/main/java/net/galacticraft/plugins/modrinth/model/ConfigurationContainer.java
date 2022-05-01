@@ -35,6 +35,22 @@ public interface ConfigurationContainer {
 	default void projectId(final String projectId) {
 		this.getProjectId().set(projectId);
 	}
+	
+	Property<Object> getMainFile();
+	
+	default void mainFile(Object file) {
+		this.getMainFile().set(file);
+	}
+	
+//	ListProperty<Object> getAdditionalFiles();
+//	
+//	default void addFile(Object file) {
+//		this.getAdditionalFiles().add(file);
+//	}
+//	
+//	default void addFiles(Object... files) {
+//		this.getAdditionalFiles().addAll(files);
+//	}
 
 	Property<Boolean> getDebug();
 

@@ -9,14 +9,13 @@ import javax.annotation.Nonnull;
 
 import org.gradle.api.Project;
 import org.gradle.api.internal.project.ProjectInternal;
-import org.gradle.api.logging.Logger;
 import org.gradle.initialization.layout.ProjectCacheDir;
 
 import lombok.var;
-import net.galacticraft.plugins.curseforge.internal.Util;
-import net.galacticraft.plugins.curseforge.json.CurseError;
-import net.galacticraft.plugins.curseforge.json.CurseReponse;
-import net.galacticraft.plugins.curseforge.json.ReturnReponse;
+import net.galacticraft.plugins.curseforge.curse.json.CurseError;
+import net.galacticraft.plugins.curseforge.curse.json.CurseReponse;
+import net.galacticraft.plugins.curseforge.curse.json.ReturnReponse;
+import net.galacticraft.plugins.curseforge.util.Util;
 import okhttp3.Cache;
 import okhttp3.CacheControl;
 import okhttp3.Interceptor;
@@ -30,8 +29,7 @@ public class OkHttpUtil {
 	
 	public static OkHttpUtil instance;
 	
-	private Logger logger;
-    private OkHttpClient client;
+	private OkHttpClient client;
     private Cache okHttpCache;
     private Map<String, String> headerMap;
 	
@@ -39,7 +37,7 @@ public class OkHttpUtil {
     
     private OkHttpUtil(Project project) {
 		super();
-		this.logger = project.getLogger();
+		project.getLogger();
 		this.setupCache(project);
 		this.setupClient(project);
 		this.headerMap = new HashMap<>();

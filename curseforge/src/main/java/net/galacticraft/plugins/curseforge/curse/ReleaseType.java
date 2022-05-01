@@ -25,34 +25,47 @@
 
 package net.galacticraft.plugins.curseforge.curse;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.google.gson.annotations.SerializedName;
 
 public enum ReleaseType {
 
-	RELEASE("release"), BETA("beta"), ALPHA("alpha");
+    @SerializedName("alpha")
+    ALPHA("alpha"),
+    @SerializedName("beta")
+    BETA("beta"),
+    @SerializedName("release")
+    RELEASE("release");
+    private final String value;
+    public final static Map<String, ReleaseType> CONSTANTS = new HashMap<String, ReleaseType>();
 
-	private final String value;
-	public final static List<String> CONSTANTS = new ArrayList<>();
-	public final static List<ReleaseType> VALID_TYPES = new ArrayList<>();
+    static {
+        for (ReleaseType c: values()) {
+            CONSTANTS.put(c.value, c);
+        }
+    }
 
-	static {
-		for (ReleaseType c : values()) {
-			CONSTANTS.add(c.value);
-			VALID_TYPES.add(c);
-		}
-	}
+    ReleaseType(String value) {
+        this.value = value;
+    }
 
-	ReleaseType(String value) {
-		this.value = value;
-	}
+    @Override
+    public String toString() {
+        return this.value;
+    }
 
-	@Override
-	public String toString() {
-		return this.value;
-	}
+    public String value() {
+        return this.value;
+    }
 
-	public String value() {
-		return this.value;
-	}
+    public static ReleaseType fromValue(String value) {
+        ReleaseType constant = CONSTANTS.get(value);
+        if (constant == null) {
+            throw new IllegalArgumentException(value);
+        } else {
+            return constant;
+        }
+    }
 }

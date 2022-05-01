@@ -14,7 +14,8 @@ gradlePlugin {
     plugins {
         uploadPlugin {
             id = 'net.galacticraft.gradle.publishing'
-            description = 'Applies both the CurseForge & Modrinth Upload plugins'
+            displayName = 'Galacticraft Publishing'
+            description = 'Applies both the CurseForge & Modrinth Publishing plugins'
             implementationClass = 'net.galacticraft.plugins.publishing.ModPublihingPlugin'
         }
     }

@@ -1,4 +1,4 @@
-package net.galacticraft.plugins.curseforge.json;
+package net.galacticraft.plugins.curseforge.curse.json;
 
 public class CurseReponse extends ReturnReponse {
 	

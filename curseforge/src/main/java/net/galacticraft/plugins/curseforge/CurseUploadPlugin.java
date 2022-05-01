@@ -25,20 +25,30 @@
 
 package net.galacticraft.plugins.curseforge;
 
+import java.io.File;
+
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.jetbrains.annotations.NotNull;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+
 import net.galacticraft.plugins.curseforge.base.Extensions;
 import net.galacticraft.plugins.curseforge.base.GradlePlugin;
+import net.galacticraft.plugins.curseforge.curse.ChangelogType;
+import net.galacticraft.plugins.curseforge.curse.CurseVersions;
+import net.galacticraft.plugins.curseforge.curse.FileArtifact;
 import net.galacticraft.plugins.curseforge.curse.ReleaseType;
 import net.galacticraft.plugins.curseforge.http.OkHttpUtil;
-import net.galacticraft.plugins.curseforge.internal.CurseVersions;
+import net.galacticraft.plugins.curseforge.util.Util;
 
 public class CurseUploadPlugin implements GradlePlugin {
 
@@ -48,10 +58,15 @@ public class CurseUploadPlugin implements GradlePlugin {
 	public void apply(@NotNull Project project, @NotNull PluginContainer plugins, @NotNull ExtensionContainer extensions, @NotNull TaskContainer tasks) {
 		this.project = project;
 		
+		if(!plugins.hasPlugin(JavaPlugin.class)) {
+			plugins.apply(JavaPlugin.class);
+		}
+		
+		Util.project = this.project;
 		OkHttpUtil.setup(project);
 		CurseVersions.init();
 		
-		CurseUploadExtension extension = Extensions.findOrCreate(extensions, "curseforge", CurseUploadExtension.class, project, project.getObjects());
+		CurseUploadExtension extension = Extensions.findOrCreate(extensions, "curseforge", CurseUploadExtension.class, project.getObjects());
 		
 		tasks.register("publishToCurseforge", CurseUploadTask.class, task -> {
 			task.setGroup("galactic-gradle");
@@ -59,22 +74,89 @@ public class CurseUploadPlugin implements GradlePlugin {
 			task.dependsOn(tasks.named("build"));
 		});
 		
-		project.afterEvaluate(set -> {
+		project.afterEvaluate(configure -> {
+			this.configureApiToken(extension);
+			this.configureUploadFileIfNeeded(extension);
+			this.configureVersionIfNeeded(extension);
+			this.configureChangelogIfNeeded(extension);
+		});
+	}
+	
+	private void configureApiToken(CurseUploadExtension extension) {
+		if(!extension.getApiKey().isPresent()) {
+			if(System.getenv("CURSE_TOKEN") != null) {
+				extension.getApiKey().set(System.getenv("CURSE_TOKEN"));
+			} else if (project.findProperty("CURSE_TOKEN") != null) {
+				extension.getApiKey().set((String) project.findProperty("CURSE_TOKEN"));
+			} else {
+				this.project.getLogger().lifecycle("[CurseForge] Could not set CURSE_TOKEN from Environment Variable or Project Property");
+				throw new GradleException("[CurseForge] Could not set CURSE_TOKEN from Environment Variable or Project Property");
+			}
+		}
+		OkHttpUtil.instance.addHeader("X-Api-Token", extension.getApiKey().get());
+	}
+	
+	private void configureUploadFileIfNeeded(CurseUploadExtension extension) {
+		if(!extension.getMainFile().isPresent()) {
 			project.getTasks().withType(AbstractArchiveTask.class, task -> {
-				extension.getUploadFile().set(task.getArchiveFile());
+				if(task.getName().equals("jar")) {
+					extension.getMainFile().set(new FileArtifact(task.getArchiveFile(), extension.getDisplayName().getOrNull()));
+				}
 			});
-			
-			
+		}
+	}
+	
+	private void configureVersionIfNeeded(CurseUploadExtension extension) {
+		if(!extension.getReleaseType().isPresent()) {
 			Provider<String> version = project.provider(() -> project.getVersion() == null ? null : String.valueOf(project.getVersion()));
-	        for(String val : ReleaseType.CONSTANTS) {
+	        for(String val : ReleaseType.CONSTANTS.keySet()) {
 	        	if(version.get().contains(val)) {
 	        		extension.getReleaseType().set(val);
 	        	}
 	        }
-			if(!extension.getApiKey().isPresent()) {
-				extension.getApiKey().set((String) project.findProperty("CURSE_TOKEN"));
+		}
+	}
+	
+	private void configureChangelogIfNeeded(CurseUploadExtension extension) {
+        File dir = project.getProjectDir();
+        String changelogContent =  null;
+        String changelogExt = null;
+		if(extension.getChangelog().isPresent()) {
+        	String changelogFile = extension.getChangelog().get();
+        	File file = this.project.file(changelogFile);
+        	if(file.exists()) {
+        		changelogContent = this.readFromFile(file);
+        		String fileExt = Files.getFileExtension(file.getName());
+        		changelogExt = ChangelogType.fromValue(fileExt).value();
+        	} else {
+        		changelogContent = extension.getChangelog().get();
+				changelogExt = ChangelogType.TEXT.value();
 			}
-			OkHttpUtil.instance.addHeader("X-Api-Token", extension.getApiKey().get());
-		});
+		} else {
+            for(File file : dir.listFiles()) {
+            	if (file.isFile()) {
+            		String[] filename = file.getName().split("\\.(?=[^\\.]+$)");
+            		if(filename[0].equalsIgnoreCase("changelog")) {
+            			changelogContent = this.readFromFile(file);
+    	        		String fileExt = Files.getFileExtension(file.getName());
+    	        		changelogExt = ChangelogType.fromValue(fileExt).value();
+            		}
+            	}
+            }
+		}
+		if(changelogContent != null) {
+			extension.getChangelog().set(changelogContent);
+			extension.getChangelogType().set(changelogExt);
+		} else {
+			extension.getChangelog().set("No Changelog Provided");
+			extension.getChangelogType().set(ChangelogType.TEXT.value());
+		}
+	}
+	
+	private String readFromFile(File file) {
+		try {
+			return Files.asCharSource(file, Charsets.UTF_8).read();
+		} catch (Exception e) {}
+		return null;
 	}
 }

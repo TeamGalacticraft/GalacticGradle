@@ -1,4 +1,4 @@
-package net.galacticraft.plugins.curseforge.json;
+package net.galacticraft.plugins.curseforge.curse.json;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

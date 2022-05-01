@@ -25,14 +25,21 @@
 
 package net.galacticraft.plugins.modrinth;
 
+import java.io.File;
+
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.jetbrains.annotations.NotNull;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import net.galacticraft.plugins.modrinth.base.Extensions;
 import net.galacticraft.plugins.modrinth.base.GradlePlugin;
@@ -49,7 +56,7 @@ public class ModrinthUploadPlugin implements GradlePlugin {
 			plugins.apply(JavaPlugin.class);
 		}
 
-		ModrinthUploadExtension extension = Extensions.findOrCreate(extensions, "modrinth", ModrinthUploadExtension.class, project, project.getObjects());
+		ModrinthUploadExtension extension = Extensions.findOrCreate(extensions, "modrinth", ModrinthUploadExtension.class, project.getObjects());
 
 		tasks.register("publishToModrinth", ModrinthUploadTask.class, task -> {
 			task.setGroup("galactic-gradle");
@@ -58,16 +65,81 @@ public class ModrinthUploadPlugin implements GradlePlugin {
 		});
 		
 		project.afterEvaluate(set -> {
+			this.configureApiToken(extension);
+			this.configureUploadFileIfNeeded(extension);
+			this.configureVersionIfNeeded(extension);
+			this.configureChangelogIfNeeded(extension);
+		});
+	}
+	
+	private void configureApiToken(ModrinthUploadExtension extension) {
+		if(!extension.getToken().isPresent()) {
+			if(System.getenv("MODRINTH_TOKEN") != null) {
+				extension.getToken().set(System.getenv("MODRINTH_TOKEN"));
+			} else if (project.findProperty("MODRINTH_TOKEN") != null) {
+				extension.getToken().set((String) project.findProperty("MODRINTH_TOKEN"));
+			} else {
+				this.project.getLogger().lifecycle("[Modrinth] Could not set MODRINTH_TOKEN from Environment Variable or Project Property");
+				throw new GradleException("[Modrinth] Could not set MODRINTH_TOKEN from Environment Variable or Project Property");
+			}
+		}
+	}
+	
+	private void configureUploadFileIfNeeded(ModrinthUploadExtension extension) {
+		if(!extension.getMainFile().isPresent()) {
 			project.getTasks().withType(AbstractArchiveTask.class, task -> {
-				extension.getUploadFile().set(task.getArchiveFile());
+				if(task.getName().equals("jar")) {
+					extension.getMainFile().set(task.getArchiveFile());
+				}
 			});
-			
-			String version = extension.getVersionNumber().get();
-	        for(String val : VersionType.CONSTANTS) {
-	        	if(version.contains(val)) {
+		}
+	}
+	
+	private void configureVersionIfNeeded(ModrinthUploadExtension extension) {
+		Provider<String> version = project.provider(() -> project.getVersion() == null ? null : String.valueOf(project.getVersion()));
+		if(!extension.getVersionNumber().isPresent()) {
+			extension.getVersionNumber().set(version);
+		}
+		
+		if(!extension.getVersionType().isPresent()) {
+	        for(String val : VersionType.CONSTANTS.keySet()) {
+	        	if(version.get().contains(val)) {
 	        		extension.getVersionType().set(val);
 	        	}
 	        }
-		});
+		}
+	}
+	
+	private void configureChangelogIfNeeded(ModrinthUploadExtension extension) {
+        File dir = project.getProjectDir();
+        String changelogContent =  null;
+		if(extension.getChangelog().isPresent()) {
+        	String changelogFile = extension.getChangelog().get();
+        	File file = this.project.file(changelogFile);
+        	if(file.exists()) {
+        		changelogContent = this.readFromFile(file);
+        	}
+		} else {
+            for(File file : dir.listFiles()) {
+            	if (file.isFile()) {
+            		String[] filename = file.getName().split("\\.(?=[^\\.]+$)");
+            		if(filename[0].equalsIgnoreCase("changelog")) {
+            			changelogContent = this.readFromFile(file);
+            		}
+            	}
+            }
+		}
+		if(changelogContent != null) {
+			extension.getChangelog().set(changelogContent);
+		} else {
+			extension.getChangelog().set("No changelog provided");
+		}
+	}
+	
+	private String readFromFile(File file) {
+		try {
+			return Files.asCharSource(file, Charsets.UTF_8).read();
+		} catch (Exception e) {}
+		return null;
 	}
 }
