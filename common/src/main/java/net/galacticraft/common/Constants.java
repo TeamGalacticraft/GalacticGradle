@@ -23,11 +23,9 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention;
+package net.galacticraft.common;
 
 import java.util.regex.Pattern;
-
-import net.galacticraft.plugins.convention.util.Version;
 
 public final class Constants {
 	public static final String NAME = "GalacticGradle";

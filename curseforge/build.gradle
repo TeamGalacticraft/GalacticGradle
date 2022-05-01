@@ -31,12 +31,16 @@ dependencies {
 	
 	testCompileOnly 'org.projectlombok:lombok:1.18.24'
 	testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+	compileOnly project(':common')
 }
 
 jar {
 	from(configurations.provided.asFileTree.files.collect { zipTree(it) }) {
 		exclude '*.xml', '*.json', '*.xml', '*.pom', '*.properties', 'META-INF/**'
 	}
+	from project(":common").sourceSets.main.output
+	
+	dependsOn project(':common').tasks.jar
 }
 
 gradlePlugin {

@@ -23,11 +23,10 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.util;
+package net.galacticraft.common;
 
 import java.util.function.Supplier;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.checkerframework.checker.nullness.qual.NonNull;

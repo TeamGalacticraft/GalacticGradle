@@ -23,21 +23,44 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.curseforge.base;
+package net.galacticraft.common;
 
+import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
-import org.gradle.api.provider.Provider;
+import org.gradle.internal.impldep.org.eclipse.jgit.annotations.NonNull;
 
-public class GradleCompatibility {
-	static final boolean HAS_CONVENTION = hasMethod(Project.class, "getConvention");
-	static final boolean HAS_FOR_USE_AT_CONFIGURATION_TIME = hasMethod(Provider.class, "forUseAtConfigurationTime");
+public final class Versions {
+	public static int versionNumber(final @NonNull JavaVersion version) {
+		return version.ordinal() + 1;
+	}
 
-	private static boolean hasMethod(final Class<?> clazz, final String name, final Class<?>... args) {
-		try {
-			clazz.getMethod(name, args);
-			return true;
-		} catch (final NoSuchMethodException ex) {
-			return false;
+	public static String versionString(final int version) {
+		if (version <= 8) {
+			return "1." + version;
+		} else {
+			return String.valueOf(version);
 		}
+	}
+
+	public static String versionString(final @NonNull JavaVersion version) {
+		if (version == JavaVersion.VERSION_1_9) {
+			return "9";
+		} else if (version == JavaVersion.VERSION_1_10) {
+			return "10";
+		} else {
+			return version.toString();
+		}
+	}
+
+	public static boolean isSnapshot(final @NonNull Project project) {
+		return project.getVersion().toString().contains("-SNAPSHOT");
+	}
+
+	public static boolean isRelease(final @NonNull Project project) {
+		Version projectVersion = new Version(project.getVersion().toString());
+		return projectVersion.isStable() && !isSnapshot(project);
+	}
+
+	private Versions() {
 	}
 }

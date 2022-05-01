@@ -41,8 +41,8 @@ import org.jetbrains.annotations.NotNull;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
-import net.galacticraft.plugins.modrinth.base.Extensions;
-import net.galacticraft.plugins.modrinth.base.GradlePlugin;
+import net.galacticraft.common.plugins.Extensions;
+import net.galacticraft.common.plugins.GradlePlugin;
 import net.galacticraft.plugins.modrinth.model.type.VersionType;
 
 public class ModrinthUploadPlugin implements GradlePlugin {
@@ -118,7 +118,11 @@ public class ModrinthUploadPlugin implements GradlePlugin {
         	File file = this.project.file(changelogFile);
         	if(file.exists()) {
         		changelogContent = this.readFromFile(file);
-        	}
+        	} else {
+        		if(!determineIfChangelogPropertyIsAFileName(changelogFile)) {
+        			changelogContent = extension.getChangelog().get();
+        		}
+			}
 		} else {
             for(File file : dir.listFiles()) {
             	if (file.isFile()) {
@@ -133,6 +137,20 @@ public class ModrinthUploadPlugin implements GradlePlugin {
 			extension.getChangelog().set(changelogContent);
 		} else {
 			extension.getChangelog().set("No changelog provided");
+		}
+	}
+	
+	private boolean determineIfChangelogPropertyIsAFileName(String changelog) {
+		String[] changelogDeclaration = changelog.split("\\.");
+		if(changelogDeclaration.length >= 2) {
+			String afterPeriod = changelogDeclaration[1];
+			if(afterPeriod.startsWith("  ") || afterPeriod.startsWith(" ")) {
+				return false;
+			} else {
+				return true;
+			}
+		} else {
+			return false;
 		}
 	}
 	

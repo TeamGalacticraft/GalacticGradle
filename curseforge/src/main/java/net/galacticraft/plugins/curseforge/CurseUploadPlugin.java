@@ -41,8 +41,8 @@ import org.jetbrains.annotations.NotNull;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
-import net.galacticraft.plugins.curseforge.base.Extensions;
-import net.galacticraft.plugins.curseforge.base.GradlePlugin;
+import net.galacticraft.common.plugins.Extensions;
+import net.galacticraft.common.plugins.GradlePlugin;
 import net.galacticraft.plugins.curseforge.curse.ChangelogType;
 import net.galacticraft.plugins.curseforge.curse.CurseVersions;
 import net.galacticraft.plugins.curseforge.curse.FileArtifact;

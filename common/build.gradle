@@ -1,0 +1,17 @@
+plugins {
+    id "org.shipkit.shipkit-changelog"
+    id "com.adarshr.test-logger"
+}
+
+dependencies {
+	compileOnly 'com.google.guava:guava:31.0.1-jre'
+}
+
+license {
+	header = rootProject.file("HEADER.txt")
+	properties {
+		name = "${name}"
+		organization = "${organization}"
+		url = "${url}"
+	}
+}

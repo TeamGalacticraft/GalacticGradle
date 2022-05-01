@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.modrinth.base;
+package net.galacticraft.common.plugins;
 
 import org.gradle.api.plugins.ExtensionContainer;
 

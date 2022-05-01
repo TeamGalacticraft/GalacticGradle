@@ -32,12 +32,12 @@ import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.jetbrains.annotations.NotNull;
 
+import net.galacticraft.common.plugins.Extensions;
+import net.galacticraft.common.plugins.GradlePlugin;
 import net.galacticraft.plugins.curseforge.CurseUploadExtension;
 import net.galacticraft.plugins.curseforge.CurseUploadPlugin;
 import net.galacticraft.plugins.modrinth.ModrinthUploadExtension;
 import net.galacticraft.plugins.modrinth.ModrinthUploadPlugin;
-import net.galacticraft.plugins.publishing.base.Extensions;
-import net.galacticraft.plugins.publishing.base.GradlePlugin;
 
 public class ModPublihingPlugin implements GradlePlugin {
 

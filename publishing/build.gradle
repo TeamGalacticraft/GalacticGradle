@@ -8,6 +8,7 @@ plugins {
 dependencies {
     implementation project(':modrinth')
     implementation project(':curseforge')
+    compileOnly project(':common')
 }
 
 gradlePlugin {
@@ -22,11 +23,13 @@ gradlePlugin {
 }
 
 jar {
-	from project(":modrinth").sourceSets.main.java.srcDirs
-	from project(":curseforge").sourceSets.main.java.srcDirs
+	from project(":modrinth").sourceSets.main.output
+	from project(":curseforge").sourceSets.main.output
+	from project(":common").sourceSets.main.output
 	
 	dependsOn project(':modrinth').tasks.jar
 	dependsOn project(':curseforge').tasks.jar
+	dependsOn project(':common').tasks.jar
 }
 
 pluginBundle {

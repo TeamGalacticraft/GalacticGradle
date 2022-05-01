@@ -23,25 +23,21 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.modrinth.base;
+package net.galacticraft.common.plugins;
 
-public class BooleanProperty {
+import org.gradle.api.Project;
+import org.gradle.api.provider.Provider;
 
-	private Boolean value;
-	
-	public Boolean getValue() {
-		return value;
-	}
+public class GradleCompatibility {
+	static final boolean HAS_CONVENTION = hasMethod(Project.class, "getConvention");
+	static final boolean HAS_FOR_USE_AT_CONFIGURATION_TIME = hasMethod(Provider.class, "forUseAtConfigurationTime");
 
-	public BooleanProperty(Object object) {
-		this.value = Boolean.parseBoolean((String) object);
-	}
-	
-	public boolean isTrue() {
-		return this.value.booleanValue();
-	}
-	
-	public boolean isFalse() {
-		return !this.value.booleanValue();
+	private static boolean hasMethod(final Class<?> clazz, final String name, final Class<?>... args) {
+		try {
+			clazz.getMethod(name, args);
+			return true;
+		} catch (final NoSuchMethodException ex) {
+			return false;
+		}
 	}
 }

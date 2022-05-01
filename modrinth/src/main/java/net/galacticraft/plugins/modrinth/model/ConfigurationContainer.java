@@ -36,9 +36,13 @@ public interface ConfigurationContainer {
 		this.getProjectId().set(projectId);
 	}
 	
+	default void projectId(final Object projectId) {
+		this.getProjectId().set(String.valueOf(projectId));
+	}
+
 	Property<Object> getMainFile();
 	
-	default void mainFile(Object file) {
+	default void file(Object file) {
 		this.getMainFile().set(file);
 	}
 	
@@ -62,6 +66,12 @@ public interface ConfigurationContainer {
 	
 	default void version(final String version) {
 		this.getVersionNumber().set(version);
+	}
+	
+	Property<String> getVersionName();
+	
+	default void versionName(final String versionName) {
+		this.getVersionName().set(versionName);
 	}
 	
 	Property<String> getVersionType();

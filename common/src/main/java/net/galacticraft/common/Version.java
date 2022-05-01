@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.convention.util;
+package net.galacticraft.common;
 
 import java.util.Objects;
 

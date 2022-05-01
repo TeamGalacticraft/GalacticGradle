@@ -10,6 +10,12 @@ dependencies {
 	compileOnly("net.minecraftforge.gradle:ForgeGradle:5.1.31") {
 		transitive = false
 	}
+	compileOnly project(':common')
+}
+
+jar {
+	from project(":common").sourceSets.main.output
+	dependsOn project(':common').tasks.jar
 }
 
 gradlePlugin {
