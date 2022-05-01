@@ -4,7 +4,7 @@
 
 ```gradle
 plugins {
-  id "net.galacticraft.gradle.publishing.modrinth" version "1.0.2"
+  id "net.galacticraft.gradle.publishing.modrinth" version "1.0.3"
 }
 ```
 
@@ -28,6 +28,15 @@ The API Key for Modrinth can only be set by either 1 of 2 methods and must be na
 - As a Environment Variable that can be resolved by `System.env("MODRINTH_TOKEN")`
 - As a Project Property that can be resolved by `project.findProperty("MODRINTH_TOKEN")`
 
+### Extension
+
+- `modrinth`
+
+### Special Property
+
+| Property                    | Description                                                                  							|
+|---------------------------- |-----------------------------------------------------------------------------------------------------	|
+| debug()                     | Sets the publish Task to output the POST request to the console and not upload the file, for testing 	|
 
 ### Properties
 
@@ -41,7 +50,6 @@ The API Key for Modrinth can only be set by either 1 of 2 methods and must be na
 | changelog(String/File)     	| Changelog can be an entire string or the relative path of a file within your project                 	|
 | gameVersions(String[])     	| Array of game versions the uploadFile is compatible with                                             	|
 | loaders(String[])     		| Can be anyOf ['fabic', 'forge', 'quilt']                                                             	|
-| debug()                    	| Sets the publish Task to output the POST request to the console and not upload the file, for testing 	|
 | dependencies 					| See [Dependencies](#dependencies)                                              						|
 
 ### Dependencies

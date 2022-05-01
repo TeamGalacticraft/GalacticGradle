@@ -4,7 +4,7 @@
 
 ```gradle
 plugins {
-  id "net.galacticraft.gradle.publishing.curseforge" version "1.0.2"
+  id "net.galacticraft.gradle.publishing.curseforge" version "1.0.3"
 }
 ```
 
@@ -28,6 +28,10 @@ The API Key for CurseForge can only be set by either 1 of 2 methods and must be 
 
 - As a Environment Variable that can be resolved by `System.env("CURSE_TOKEN")`
 - As a Project Property that can be resolved by `project.findProperty("CURSE_TOKEN")`
+
+### Extension
+
+- `curseforge`
 
 ### Special Property
 
