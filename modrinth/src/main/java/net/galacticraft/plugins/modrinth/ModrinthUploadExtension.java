@@ -29,7 +29,6 @@ import javax.inject.Inject;
 
 import org.gradle.api.Action;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Nested;
 
@@ -38,11 +37,9 @@ import net.galacticraft.plugins.modrinth.model.DependenciesConfiguation;
 
 public class ModrinthUploadExtension implements ConfigurationContainer {
 
-	private final Property<String> token, projectId, versionNumber, versionName, versionType, changelog;
+	private final Property<String> token, projectId, versionNumber, versionType, changelog;
 	private final Property<Boolean> debug;
-	private final ListProperty<String> gameVersions, loaders;
 	private final Property<Object> uploadFile;
-	//private final ListProperty<Object> additionalFiles;
 	private final DependenciesConfiguation dependencies;
 
 	@Inject
@@ -50,12 +47,8 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 		this.token =factory.property(String.class);
 		this.projectId = factory.property(String.class);
 		this.debug = factory.property(Boolean.class).convention(false);
-        this.gameVersions = factory.listProperty(String.class).empty();
-        this.loaders = factory.listProperty(String.class).empty();
         this.uploadFile = factory.property(Object.class);
-        //this.additionalFiles = factory.listProperty(Object.class).empty();
         this.versionNumber = factory.property(String.class);
-        this.versionName = factory.property(String.class);
         this.versionType = factory.property(String.class);
         this.dependencies = factory.newInstance(DependenciesConfiguation.class, factory);
         this.changelog = factory.property(String.class);
@@ -74,11 +67,6 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 	public Property<Object> getMainFile() {
 		return this.uploadFile;
 	}
-    
-//	@Override
-//	public ListProperty<Object> getAdditionalFiles() {
-//		return this.additionalFiles;
-//	}
 
 	@Override
 	public Property<Boolean> getDebug() {
@@ -86,15 +74,10 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 	}
 
 	@Override
-	public Property<String> getVersionNumber() {
+	public Property<String> getVersion() {
 		return this.versionNumber;
 	}
-	
-    public Property<String> getVersionName() {
-        return this.versionName;
-    }
 
-	@Override
 	public Property<String> getVersionType() {
 		return this.versionType;
 	}
@@ -104,16 +87,6 @@ public class ModrinthUploadExtension implements ConfigurationContainer {
 		return this.changelog;
 	}
 
-	@Override
-	public ListProperty<String> getGameVersions() {
-		return this.gameVersions;
-	}
-
-	@Override
-	public ListProperty<String> getLoaders() {
-		return this.loaders;
-	}
-	
 	@Nested
     public DependenciesConfiguation getDependenciesContainer() {
         return this.dependencies;

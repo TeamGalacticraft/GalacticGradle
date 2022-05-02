@@ -25,7 +25,6 @@
 
 package net.galacticraft.plugins.modrinth.model;
 
-import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 
 public interface ConfigurationContainer {
@@ -45,16 +44,6 @@ public interface ConfigurationContainer {
 	default void file(Object file) {
 		this.getMainFile().set(file);
 	}
-	
-//	ListProperty<Object> getAdditionalFiles();
-//	
-//	default void addFile(Object file) {
-//		this.getAdditionalFiles().add(file);
-//	}
-//	
-//	default void addFiles(Object... files) {
-//		this.getAdditionalFiles().addAll(files);
-//	}
 
 	Property<Boolean> getDebug();
 
@@ -62,39 +51,15 @@ public interface ConfigurationContainer {
 		this.getDebug().set(true);
 	}
 	
-	Property<String> getVersionNumber();
+	Property<String> getVersion();
 	
 	default void version(final String version) {
-		this.getVersionNumber().set(version);
-	}
-	
-	Property<String> getVersionName();
-	
-	default void versionName(final String versionName) {
-		this.getVersionName().set(versionName);
-	}
-	
-	Property<String> getVersionType();
-	
-	default void versionType(final String version) {
-		this.getVersionType().set(version);
+		this.getVersion().set(version);
 	}
 
 	Property<String> getChangelog();
 	
 	default void changelog(final String changelog) {
 		this.getChangelog().set(changelog);
-	}
-	
-	ListProperty<String> getGameVersions();
-	
-	default void gameVersions(final String... gameVersions) {
-		this.getGameVersions().addAll(gameVersions);
-	}
-
-	ListProperty<String> getLoaders();
-	
-	default void loaders(final String... loaders) {
-		this.getLoaders().addAll(loaders);
 	}
 }

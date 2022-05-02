@@ -23,43 +23,17 @@
  * THE SOFTWARE.
  */
 
-package net.galacticraft.plugins.modrinth.model.type;
+package net.galacticraft.plugins.modrinth.model.api;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.gradle.api.Named;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Internal;
 
-public enum DependencyType {
-
-	REQUIRED("required"), OPTIONAL("optional"), INCOMPATIBLE("incompatible");
-
-	private final String value;
-	private final static Map<String, DependencyType> CONSTANTS = new HashMap<String, DependencyType>();
-
-	static {
-		for (DependencyType c : values()) {
-			CONSTANTS.put(c.value, c);
-		}
-	}
-
-	DependencyType(String value) {
-		this.value = value;
-	}
-
-	@Override
-	public String toString() {
-		return this.value;
-	}
-
-	public String value() {
-		return this.value;
-	}
-
-	public static DependencyType fromValue(String value) {
-		DependencyType constant = CONSTANTS.get(value);
-		if (constant == null) {
-			throw new IllegalArgumentException(value);
-		} else {
-			return constant;
-		}
-	}
+public interface NamedDependency extends Named {
+	
+    @Internal
+    @Override
+    String getName();
+    
+    Property<String> getType();
 }

@@ -27,11 +27,9 @@ package net.galacticraft.plugins.modrinth.model;
 
 import javax.inject.Inject;
 
-import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.model.ObjectFactory;
 
-import net.galacticraft.plugins.modrinth.model.api.ModDependency;
 import net.galacticraft.plugins.modrinth.model.dependency.DependencyContainer;
 
 public class DependenciesConfiguation  {
@@ -46,20 +44,20 @@ public class DependenciesConfiguation  {
         return this.dependencies;
     }
     
-    public void incompatible(final String name, final Action<? super ModDependency> action) {
-    	this.dependencies.register(name, action).configure(d -> {
+    public void incompatible(final String name) {
+    	this.dependencies.register(name).configure(d -> {
     		d.incompatible();
     	});;
     }
     
-    public void required(final String name, final Action<? super ModDependency> action) {
-    	this.dependencies.register(name, action).configure(d -> {
+    public void required(final String name) {
+    	this.dependencies.register(name).configure(d -> {
     		d.required();
     	});;
     }
     
-    public void optional(final String name, final Action<? super ModDependency> action) {
-    	this.dependencies.register(name, action).configure(d -> {
+    public void optional(final String name) {
+    	this.dependencies.register(name).configure(d -> {
     		d.optional();
     	});;
     }

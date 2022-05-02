@@ -30,20 +30,19 @@ import javax.inject.Inject;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 
-import net.galacticraft.plugins.modrinth.model.api.ModDependency;
-import net.galacticraft.plugins.modrinth.model.type.DependencyType;
+import com.modrinth.minotaur.dependencies.DependencyType;
 
-public class DependencyContainer implements ModDependency {
+import net.galacticraft.plugins.modrinth.model.api.NamedDependency;
+
+public class DependencyContainer implements NamedDependency {
 
     private final String name;
-    private final Property<String> version;
     private final Property<String> type;
     
 	
     @Inject
     public DependencyContainer(final String name, final ObjectFactory factory) {
         this.name = name;
-        this.version = factory.property(String.class);
         this.type = factory.property(String.class);
     }
 
@@ -52,27 +51,19 @@ public class DependencyContainer implements ModDependency {
         return this.name;
     }
 
-    public Property<String> getVersion() {
-        return this.version;
-    }
-
-    public void version(final String version) {
-        this.version.set(version);
-    }
-
     public Property<String> getType() {
         return this.type;
     }
     
     public void required() {
-    	this.type.set(DependencyType.REQUIRED.value());
+    	this.type.set(DependencyType.REQUIRED.toString().toLowerCase());
     }
 
     public void optional() {
-        this.type.set(DependencyType.OPTIONAL.value());
+        this.type.set(DependencyType.OPTIONAL.toString().toLowerCase());
     }
     
     public void incompatible() {
-    	this.type.set(DependencyType.INCOMPATIBLE.value());
+    	this.type.set(DependencyType.INCOMPATIBLE.toString().toLowerCase());
     }
 }

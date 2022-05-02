@@ -17,18 +17,11 @@ configurations {
 }
 
 dependencies {
-	embed 'com.modrinth.minotaur:Minotaur:2.1.2'
-	implementation 'com.google.guava:guava:31.0.1-jre'
-	implementation 'com.google.code.gson:gson:2.9.0'
-	implementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.13'
-	implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.13'
+	implementation 'com.modrinth.minotaur:Minotaur:2.1.2'
 	compileOnly project(':common')
 }
 
 jar {
-	from(configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }) {
-		include "com/modrinth/minotaur/**"
-	}
 	from project(":common").sourceSets.main.output
 	dependsOn project(':common').tasks.jar
 }
