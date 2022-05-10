@@ -10,8 +10,10 @@ sourceSets {
 }
 
 configurations {
-    fg
-    compileOnly.extendsFrom fg
+    fg {
+		canBeResolved = true
+	}
+    api.extendsFrom fg
 }
 
 repositories {
@@ -19,12 +21,17 @@ repositories {
 //        name = "Fabric Maven"
 //        url = "https://maven.fabricmc.net"
 //    }
+    maven {
+        name = "GalacticraftCommon"
+        url = "https://repo.galacticraft.net/repository/maven-common/"
+        content {
+            includeGroup 'net.minecraftforge.gradle'
+        }
+    }
 }
 
 dependencies {
-    fg 'net.minecraftforge.gradle:ForgeGradle:5.1.34'
-    fg 'net.minecraftforge:srgutils:0.4.3'
-    fg 'de.siegmar:fastcsv:2.1.0'
+    fg 'net.minecraftforge.gradle:ForgeGradle:5.1.40'
 
     compileOnly project(":common")
 //    implementation 'net.fabricmc:mapping-io:0.3.0'
@@ -39,6 +46,10 @@ test {
 }
 
 jar {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    from(configurations.fg.collect { it.isDirectory() ? it : zipTree(it) }) {
+        include "net/minecraftforge/**"
+    }
     from project(":common").sourceSets.main.output
     dependsOn project(':common').tasks.jar
 }
