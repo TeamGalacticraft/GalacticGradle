@@ -3,6 +3,7 @@ package net.galacticraft.plugins.tinyforge;
 import net.galacticraft.common.plugins.GradlePlugin;
 import net.galacticraft.plugins.tinyforge.providers.YarnChannelProvider;
 import net.minecraftforge.gradle.mcp.ChannelProvidersExtension;
+import net.minecraftforge.gradle.userdev.UserDevPlugin;
 import org.gradle.api.Project;
 import org.jetbrains.annotations.NotNull;
 

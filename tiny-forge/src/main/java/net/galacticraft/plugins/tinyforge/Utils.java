@@ -1,15 +1,23 @@
 package net.galacticraft.plugins.tinyforge;
 
+import net.minecraftforge.gradle.common.config.MCPConfigV2;
 import net.minecraftforge.gradle.common.util.MavenArtifactDownloader;
+import net.minecraftforge.srgutils.IMappingBuilder;
+import net.minecraftforge.srgutils.IMappingFile;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static net.minecraftforge.gradle.common.util.Utils.getZipData;
 
 public class Utils {
 
@@ -24,6 +32,24 @@ public class Utils {
     @NotNull
     public static File getCache(Project project, String... tail) {
         return Paths.get(getCacheBase(project).toString(), tail).toFile();
+    }
+
+    public static IMappingFile getSrgToOfficial(Project project, String mcVersion) throws IOException {
+        File client = MavenArtifactDownloader.generate(project, "net.minecraft:client:" + mcVersion + ":mapping@txt", true);
+        if(client == null)
+            throw new IllegalStateException("Missing proguard mappings for " + mcVersion);
+
+        File mcp = MavenArtifactDownloader.manual(project, "de.oceanlabs.mcp:mcp_config:" + mcVersion + "@zip", false);
+        if(mcp == null) return null;
+
+        MCPConfigV2 mcpConfig = MCPConfigV2.getFromArchive(mcp);
+        IMappingFile obfToSrg = IMappingFile.load(new ByteArrayInputStream(getZipData(mcp, mcpConfig.getData("mappings"))));
+        if(obfToSrg == null)
+            throw new IllegalStateException("Missing MCP TSRG for " + mcVersion);
+
+        IMappingFile mojToObf = IMappingFile.load(client);
+        IMappingFile mojToSrg = obfToSrg.reverse().chain(mojToObf.reverse()).reverse();
+        return mojToSrg.reverse();
     }
 
     // Thanks Parchment <3

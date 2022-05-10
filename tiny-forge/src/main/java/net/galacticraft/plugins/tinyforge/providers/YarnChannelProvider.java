@@ -73,49 +73,62 @@ public class YarnChannelProvider implements ChannelProvider {
 //        if(mappings.exists())
 //            return mappings;
 
-        try(InputStream yarnMappingsStream = getMappingsFileFromJar(new ZipFile(yarnFile));
-            InputStream intMappingsStream = getMappingsFileFromJar(new ZipFile(intFile));
+        try(InputStream yarnMappingsStream = getTinyV2Mappings(new ZipFile(yarnFile));
+            InputStream intMappingsStream = getTinyV2Mappings(new ZipFile(intFile));
         ) {
-            IMappingFile obfToInt = IMappingFile.load(yarnMappingsStream);
-            IMappingFile intToYrn = IMappingFile.load(intMappingsStream);
-            IMappingFile yarnSrgMappings = convertMappings(obfToSrg, obfToInt, intToYrn).getMap("srg", "yarn");
+            IMappingFile obfToInt = IMappingFile.load(intMappingsStream);
+            IMappingFile intToYrn = IMappingFile.load(yarnMappingsStream);
 
+            obfToSrg.write(project.file("obfToSrg.txt").toPath(), IMappingFile.Format.TSRG, false);
+            obfToInt.write(project.file("obfToInt.txt").toPath(), IMappingFile.Format.TSRG, false);
+
+            IMappingFile yarnSrgMappings = convertMappings(project, obfToSrg, obfToInt, intToYrn).getMap("srg", "yarn");
+            yarnSrgMappings.write(project.file("srgToYarn.txt").toPath(), IMappingFile.Format.TSRG, false);
             if(!mappings.getParentFile().exists())
                 mappings.getParentFile().mkdirs();
 
             if(mappings.exists())
                 mappings.delete();
 
-            mergeToCsvZip(project, yarnSrgMappings, String.valueOf(mappings.toURI()));
+            mergeToCsvZip(yarnSrgMappings, String.valueOf(mappings.toURI()));
 
             return mappings;
         }
     }
 
+    private void mergeToCsvZip(IMappingFile mapping, String path) throws IOException {
+        List<String> headers = new ArrayList<>();
+        headers.add("searge");
+        headers.add("name");
+        headers.add("desc");
 
-    private void mergeToCsvZip(Project project, IMappingFile mapping, String path) throws IOException {
-        String[] header = {"searge", "name", "desc"};
-        List<String[]> packages = Arrays.asList(new String[][]{header});
-        List<String[]> classes = Arrays.asList(new String[][]{header});
-        List<String[]> fields = Arrays.asList(new String[][]{header});
-        List<String[]> methods = Arrays.asList(new String[][]{header});
-        List<String[]> parameters = Arrays.asList(new String[][]{header});
+        List<List<String>> packages = new ArrayList<>();
+        List<List<String>> classes = new ArrayList<>();
+        List<List<String>> fields = new ArrayList<>();
+        List<List<String>> methods = new ArrayList<>();
+        List<List<String>> parameters = new ArrayList<>();
+
+        packages.add(headers);
+        classes.add(headers);
+        fields.add(headers);
+        methods.add(headers);
+        parameters.add(headers);
 
         mapping.getPackages().forEach(pkg -> {
-            packages.add(new String[]{pkg.getOriginal(), pkg.getMapped(), findComment(pkg.getMetadata())});
+            packages.add(Arrays.asList(pkg.getOriginal(), pkg.getMapped(), findComment(pkg.getMetadata())));
         });
 
         mapping.getClasses().forEach(cls -> {
-            classes.add(new String[]{cls.getOriginal(), cls.getMapped(), findComment(cls.getMetadata())});
+            classes.add(Arrays.asList(cls.getOriginal(), cls.getMapped(), findComment(cls.getMetadata())));
 
             cls.getFields().forEach(fld -> {
-                fields.add(new String[]{fld.getOriginal(), fld.getMapped(), findComment(fld.getMetadata())});
+                fields.add(Arrays.asList(fld.getOriginal(), fld.getMapped(), findComment(fld.getMetadata())));
             });
 
             cls.getMethods().forEach(mtd -> {
-                methods.add(new String[]{mtd.getOriginal(), mtd.getMapped(), findComment(mtd.getMetadata())});
+                methods.add(Arrays.asList(mtd.getOriginal(), mtd.getMapped(), findComment(mtd.getMetadata())));
                 mtd.getParameters().forEach(par -> {
-                    parameters.add(new String[]{par.getOriginal(), par.getMapped(), findComment(par.getMetadata())});
+                    parameters.add(Arrays.asList(par.getOriginal(), par.getMapped(), findComment(par.getMetadata())));
                 });
             });
         });
@@ -136,70 +149,60 @@ public class YarnChannelProvider implements ChannelProvider {
         }
     }
 
-    private INamedMappingFile convertMappings(IMappingFile obfToSrg, IMappingFile obfToInt, IMappingFile intToYrn) {
-        IMappingBuilder builder = IMappingBuilder.create("obf", "srg", "intermediary", "yarn");
+    private INamedMappingFile convertMappings(Project project, IMappingFile obfToSrg, IMappingFile obfToInt, IMappingFile intToYrn) {
+        long startTime = System.currentTimeMillis();
+        project.getLogger().lifecycle("Merging mappings...");
+        IMappingBuilder builder = IMappingBuilder.create("obf", "intermediary", "yarn", "srg");
 
-        obfToSrg.getPackages().forEach(sPkg -> {
-            IMappingFile.IPackage iPkg = obfToInt.getPackage(sPkg.getOriginal());
+        obfToInt.getPackages().forEach(iPkg -> {
             IMappingFile.IPackage yPkg = intToYrn.getPackage(iPkg.getMapped());
-            IMappingBuilder.IPackage bPkg = builder.addPackage(sPkg.getOriginal(), sPkg.getMapped(), iPkg.getMapped(), yPkg.getMapped());
+            if(yPkg == null) yPkg = iPkg;
+            IMappingFile.IPackage sPkg = obfToSrg.getPackage(iPkg.getOriginal());
+            IMappingBuilder.IPackage bPkg = builder.addPackage(iPkg.getOriginal(), iPkg.getMapped(), yPkg.getMapped(), sPkg.getMapped());
 
-            copyMeta(sPkg, bPkg);
-            copyMeta(iPkg, bPkg);
             copyMeta(yPkg, bPkg);
         });
 
-        obfToSrg.getClasses().forEach(sCls -> {
-            IMappingFile.IClass iCls = obfToInt.getClass(sCls.getOriginal());
+        obfToInt.getClasses().forEach(iCls -> {
             IMappingFile.IClass yCls = intToYrn.getClass(iCls.getMapped());
-            IMappingBuilder.IClass bCls = builder.addClass(sCls.getOriginal(), sCls.getMapped(), iCls.getMapped(), yCls.getMapped());
+            if(yCls == null) yCls = iCls;
+            IMappingFile.IClass sCls = obfToSrg.getClass(iCls.getOriginal());
+            IMappingBuilder.IClass bCls = builder.addClass(iCls.getOriginal(), iCls.getMapped(), yCls.getMapped(), sCls.getMapped());
 
-            copyMeta(sCls, bCls);
-            copyMeta(iCls, bCls);
             copyMeta(yCls, bCls);
 
-            sCls.getFields().forEach(sFld -> {
-                IMappingFile.IField iFld = iCls.getField(sFld.getOriginal());
-                if (iFld == null)
-                    throw new IllegalStateException("Missing Intermediary mapping for field \"" + sFld.getOriginal() + "\".");
-                IMappingFile.IField yFld = yCls.getField(iFld.getMapped());
-                IMappingBuilder.IField bFld = bCls.field(sFld.getOriginal(), sFld.getMapped(), iFld.getMapped(), yFld != null ? yFld.getMapped() : iFld.getMapped());
-                bFld.descriptor(sFld.getDescriptor());
+            IMappingFile.IClass finalYCls = yCls;
+            iCls.getFields().forEach(iFld -> {
+                IMappingFile.IField yFld = finalYCls.getField(iFld.getMapped());
+                if(yFld == null) yFld = iFld;
+                IMappingFile.IField sFld = sCls.getField(iFld.getOriginal());
+                IMappingBuilder.IField bFld = bCls.field(iFld.getOriginal(), iFld.getMapped(), yFld.getMapped(), sFld.getMapped());
 
-                copyMeta(sFld, bFld);
-                copyMeta(iFld, bFld);
-                if(yFld != null) copyMeta(yFld, bFld);
+                copyMeta(yFld, bFld);
             });
-            
-            sCls.getMethods().forEach(sMtd -> {
-                IMappingFile.IMethod iMtd = iCls.getMethod(sMtd.getOriginal(), sMtd.getDescriptor());
-                if (iMtd == null)
-                    throw new IllegalStateException("Missing Intermediary mapping for method \"" + sMtd.getOriginal() + "\" \"" + sMtd.getDescriptor() + "\".");
-                IMappingFile.IMethod yMtd = yCls.getMethod(iMtd.getMapped(), iMtd.getMappedDescriptor());
-                IMappingBuilder.IMethod bMtd = bCls.method(sMtd.getDescriptor(), sMtd.getOriginal(), sMtd.getMapped(), iMtd.getMapped(), yMtd != null ? yMtd.getMapped() : iMtd.getMapped());
 
-                copyMeta(sMtd, bMtd);
-                copyMeta(iMtd, bMtd);
-                if(yMtd != null) copyMeta(yMtd, bMtd);
+            iCls.getMethods().forEach(iMtd -> {
+                IMappingFile.IMethod yMtd = finalYCls.getMethod(iMtd.getMapped(), iMtd.getMappedDescriptor());
+                if(yMtd == null) yMtd = iMtd;
+                IMappingFile.IMethod sMtd = sCls.getMethod(iMtd.getOriginal(), iMtd.getDescriptor());
+                IMappingBuilder.IMethod bMtd = bCls.method(iMtd.getDescriptor(), iMtd.getOriginal(), iMtd.getMapped(), yMtd.getMapped(), sMtd.getMapped());
 
-                sMtd.getParameters().forEach(sPar -> {
-                    IMappingFile.IParameter iPar = iMtd.getParameters().toArray(new IMappingFile.IParameter[]{})[sPar.getIndex()];
-                    if (iPar == null)
-                        throw new IllegalStateException("Missing Intermediary mapping for parameter \"" + sPar.getOriginal() + "\" \"" + sPar.getIndex() + "\".");
-                    IMappingFile.IParameter yPar = iPar;
-                    if(yMtd != null)
-                        yPar = yMtd.getParameters().toArray(new IMappingFile.IParameter[]{})[sPar.getIndex()];
-                    
-                    IMappingBuilder.IParameter bPar = bMtd.parameter(sPar.getIndex(), sPar.getOriginal(), sPar.getMapped(), iPar.getMapped(), yPar.getMapped());
+                copyMeta(yMtd, bMtd);
 
-                    copyMeta(sPar, bPar);
-                    copyMeta(iPar, bPar);
-                    if(yPar != iPar) copyMeta(yPar, bPar);
+                IMappingFile.IMethod finalYMtd = yMtd;
+                iMtd.getParameters().forEach(iPar -> {
+                    Optional<? extends IMappingFile.IParameter> yParOpt = finalYMtd.getParameters().stream().filter(p -> p.getIndex() == iPar.getIndex()).findFirst();
+                    if(!yParOpt.isPresent()) yParOpt = Optional.of(iPar);
+                    IMappingFile.IParameter yPar = yParOpt.get();
+                    IMappingFile.IParameter sPar = sMtd.getParameters().stream().filter(p -> p.getIndex() == iPar.getIndex()).findFirst().get();
+                    IMappingBuilder.IParameter bPar = bMtd.parameter(iPar.getIndex(), iPar.getOriginal(), iPar.getMapped(), yPar.getMapped(), sPar.getMapped());
+
+                    copyMeta(yPar, bPar);
                 });
             });
-            
-            
         });
+
+        project.getLogger().lifecycle("Merged mappings. (Took {}ms)", System.currentTimeMillis()-startTime);
 
         return builder.build();
     }
@@ -283,7 +286,7 @@ public class YarnChannelProvider implements ChannelProvider {
             return proguardFile;
         }
     */
-    private InputStream getMappingsFileFromJar(ZipFile mappingsJar) throws IOException {
+    private InputStream getTinyV2Mappings(ZipFile mappingsJar) throws IOException {
         ZipEntry entry = mappingsJar.getEntry("mappings/mappings.tiny");
         if (entry == null)
             throw new IllegalStateException("Jar does not contain mappings file.");
@@ -291,7 +294,7 @@ public class YarnChannelProvider implements ChannelProvider {
         return mappingsJar.getInputStream(entry);
     }
 
-    protected void writeCsv(String name, List<String[]> mappings, Path rootPath) throws IOException {
+    protected void writeCsv(String name, List<List<String>> mappings, Path rootPath) throws IOException {
         if (mappings.size() <= 1)
             return;
         Path csvPath = rootPath.resolve(name);
