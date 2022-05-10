@@ -12,7 +12,6 @@ import net.minecraftforge.srgutils.IMappingBuilder;
 import net.minecraftforge.srgutils.IMappingFile;
 import net.minecraftforge.srgutils.INamedMappingFile;
 import org.gradle.api.Project;
-import org.gradle.internal.impldep.com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,21 +52,15 @@ public class YarnChannelProvider implements ChannelProvider {
                                 @NotNull String mappingsVersion) throws IOException {
         YarnVersion version = YarnVersion.of(mappingsVersion);
 
-        File yarnFile = cacheYarn(project, version);
-        if(!yarnFile.exists())
-            yarnFile = MavenArtifactDownloader.manual(project, version.getArtifact(), true);
+        File yarnFile = Utils.getDependency(project, version.getDependencyNotation());
         if(yarnFile == null)
-            throw new IllegalStateException("Could not find Yarn artifact for " + version.getArtifact());
+            throw new IllegalStateException("Could not find Yarn artifact for " + version.getVersion());
+        project.getLogger().lifecycle("Found Yarn artifact " + version.getVersion());
 
-        project.getLogger().info("Found Yarn artifact v" + version.getVersion());
-
-        File intFile = cacheInt(project, version);
-        if(!intFile.exists())
-            intFile = MavenArtifactDownloader.manual(project, version.getIntArtifact(), true);
+        File intFile = Utils.getDependency(project, version.getIntermediaryDependencyNotation());
         if(intFile == null)
-            throw new IllegalStateException("Could not find Intermediary artifact for " + version.getIntArtifact());
-
-        project.getLogger().info("Found Intermediary artifact v" + version.getMinecraftVersion());
+            throw new IllegalStateException("Could not find Intermediary artifact for " + version.getIntermediaryDependencyNotation());
+        project.getLogger().lifecycle("Found Intermediary artifact " + version.getMinecraftVersion());
 
         File mcpFile = MavenArtifactDownloader.manual(project, "de.oceanlabs.mcp:mcp_config:" + version.getMinecraftVersion() + "@zip", false);
         if(mcpFile == null)
@@ -233,16 +226,6 @@ public class YarnChannelProvider implements ChannelProvider {
 
     private String findComment(Map<String, String> meta) {
         return meta.getOrDefault("comment", "");
-    }
-
-    @NotNull
-    private File cacheYarn(Project project, YarnVersion version) {
-        return Utils.getCache(project, "net", "fabricmc", "yarn", version.getVersion(), "-v2.jar");
-    }
-
-    @NotNull
-    private File cacheInt(Project project, YarnVersion version) {
-        return Utils.getCache(project, "net", "fabricmc", "intermediary", version.getMinecraftVersion(), "-v2.jar");
     }
 
     @NotNull

@@ -36,11 +36,11 @@ public class YarnVersion {
         return this.getMinecraftVersion() + "+build." + this.getYarnBuild();
     }
 
-    public String getArtifact() {
+    public String getDependencyNotation() {
         return "net.fabricmc:yarn:" + this.getVersion() + ":v2";
     }
 
-    public String getIntArtifact() {
+    public String getIntermediaryDependencyNotation() {
         return "net.fabricmc:intermediary:" + this.getMinecraftVersion() + ":v2";
     }
 }

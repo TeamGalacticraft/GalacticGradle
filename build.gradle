@@ -22,7 +22,7 @@ subprojects {
 	}
 	
 	group = "net.galacticraft"
-	version = "1.0.3-local.24"
+	version = "1.0.3-local.25"
 	
     java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
