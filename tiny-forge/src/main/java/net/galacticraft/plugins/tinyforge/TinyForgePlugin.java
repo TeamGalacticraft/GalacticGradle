@@ -11,7 +11,10 @@ public class TinyForgePlugin implements GradlePlugin {
     public void apply(@NotNull Project project) {
         GradlePlugin.super.apply(project);
 
-        // ensure ForgeGradle is applied first
+        // attempt to apply ForgeGradle to the project
+        project.getPluginManager().apply(UserDevPlugin.class);
+        
+        // then ensure ForgeGradle is applied
         ChannelProvidersExtension channelProviders = project.getExtensions().findByType(ChannelProvidersExtension.class);
         if (channelProviders == null)
             throw new IllegalStateException("The TinyForge plugin must be applied after ForgeGradle.");
