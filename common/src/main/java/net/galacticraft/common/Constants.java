@@ -27,56 +27,71 @@ package net.galacticraft.common;
 
 import java.util.regex.Pattern;
 
-public final class Constants {
+import org.gradle.api.NamedDomainObjectProvider;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
+
+import lombok.experimental.UtilityClass;
+import net.galacticraft.common.plugins.helpers.Repositories.Metadata;
+
+@UtilityClass
+public class Constants {
 	public static final String NAME = "GalacticGradle";
-	public static final Version VERSION = Version.set(Constants.rawVersion());
+	public static final Version VERSION = Version.of(Constants.rawVersion());
 	public static final String TASK_GROUP = "Galacticraft-Addon";
 	public static final String GITHUB_ORG = "TeamGalacticraft";
-	
+
 	public static final String version() {
 		return Constants.VERSION.toString();
 	}
-	
-    public static class Repositories {
-        public static final String GALACTICRAFT = "https://repo.galacticraft.net/repository/maven-public/";
-        
-        private Repositories() {
-        }
-    }
-	
-    public static class Dependencies {
-        public static final String GC_GROUP = "dev.galacticraft";
-        
-    	public static final String GC_LEGACY = GC_GROUP + ":" + "galacticraft-legacy";
-    	public static final String GALACTICRAFT = GC_GROUP + ":" + "galacticraft";
-    	public static final String GALACTICRAFT_API = GC_GROUP + ":" + "galacticraft-api";
-    
-        public static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
-        
-        private Dependencies() {
-        }
-    }
-    
-    private Constants() {
-    }
-	
+
+	@UtilityClass
+	public static class Repositories {
+		public static final String MAVEN_PUBLIC = "https://repo.galacticraft.net/repository/maven-public/";
+		public static final String MAVEN_COMMON = "https://repo.galacticraft.net/repository/maven-common/";
+		public static final String MAVEN = "https://repo.galacticraft.net/repository/maven/";
+
+		public static final NamedDomainObjectProvider<MavenArtifactRepository> mavenCommon(Project project) {
+			return project.getObjects().domainObjectContainer(MavenArtifactRepository.class)
+				.register("maven_common", repo -> {
+					repo.setName("common-maven");
+					repo.setUrl("https://repo.galacticraft.net/repository/maven-common/");
+					repo.metadataSources(Metadata.ALL.set());
+				}
+			);
+		}
+	}
+
+	@UtilityClass
+	public static class Dependencies {
+		public static final String GC_GROUP = "dev.galacticraft";
+
+		public static final String GC_LEGACY = GC_GROUP + ":" + "galacticraft-legacy";
+		public static final String GALACTICRAFT = GC_GROUP + ":" + "galacticraft";
+		public static final String GALACTICRAFT_API = GC_GROUP + ":" + "galacticraft-api";
+
+		public static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
+	}
+
 	private static String rawVersion() {
 		final String rawVersion = Constants.class.getPackage().getImplementationVersion();
 		return (rawVersion == null) ? "dev" : rawVersion;
 	}
-	
-    /**
-     * <p>Ids must conform to the following requirements:</p>
-     *
-     * <ul>
-     *     <li>Must be between 2 and 64 characters in length</li>
-     *     <li>Must start with a lower case letter (a-z)</li>
-     *     <li>May only contain a mix of lower case letters (a-z),
-     *     numbers (0-9), dashes (-), and underscores (_)</li>
-     * </ul>
-     */
-    public static final Pattern VALID_ID_PATTERN = Pattern.compile("^[a-z][a-z0-9-_]{1,63}$");
 
-    public static final String INVALID_ID_REQUIREMENTS_MESSAGE = "IDs can be between 2 and 64 characters long and must start with a lower case"
-            + " letter, followed by any mix of lower case letters (a-z), numbers (0-9), dashes (-) and underscores (_).";
+	/**
+	 * <p>
+	 * Ids must conform to the following requirements:
+	 * </p>
+	 *
+	 * <ul>
+	 * <li>Must be between 2 and 64 characters in length</li>
+	 * <li>Must start with a lower case letter (a-z)</li>
+	 * <li>May only contain a mix of lower case letters (a-z), numbers (0-9), dashes
+	 * (-), and underscores (_)</li>
+	 * </ul>
+	 */
+	public static final Pattern VALID_ID_PATTERN = Pattern.compile("^[a-z][a-z0-9-_]{1,63}$");
+
+	public static final String INVALID_ID_REQUIREMENTS_MESSAGE = "IDs can be between 2 and 64 characters long and must start with a lower case"
+			+ " letter, followed by any mix of lower case letters (a-z), numbers (0-9), dashes (-) and underscores (_).";
 }

@@ -5,17 +5,42 @@ plugins {
     id "com.adarshr.test-logger"
 }
 
-dependencies {
-	compileOnly("net.minecraftforge.gradle.legacy:ForgeGradle:2.3")
-	compileOnly("net.minecraftforge.gradle:ForgeGradle:5.1.31") {
-		transitive = false
+configurations {
+	provided {
+		canBeResolved = true
 	}
+	api.extendsFrom provided
+}
+
+repositories {
+	maven {
+		url = "https://repo.galacticraft.net/repository/maven-common/"
+		content {
+			includeGroup 'net.minecraftforge.gradle'
+		}
+	}
+	mavenLocal()
+}
+
+dependencies {
+	implementation 'net.minecraftforge.gradle:ForgeGradle:5.1.40'
+	implementation 'com.google.guava:guava:31.0.1-jre'
+	
+	provided 'wtf.gofancy.fancygradle:wtf.gofancy.fancygradle.gradle.plugin:1.1.1-6'
+	
 	compileOnly project(':common')
 }
 
 jar {
 	from project(":common").sourceSets.main.output
+
+	from(configurations.provided.collect { it.isDirectory() ? it : zipTree(it) }) {
+		exclude "META-INF/**"
+	}
+
 	dependsOn project(':common').tasks.jar
+	
+	manifest.from(MANIFEST)
 }
 
 gradlePlugin {
@@ -30,7 +55,7 @@ gradlePlugin {
 }
 
 pluginBundle {
-    website = 'https://galacticraft.net/'
+    website = 'https://github.com/TeamGalacticraft/GalacticGradle'
     vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
     tags = ['galacticraft', 'plugin']
 }

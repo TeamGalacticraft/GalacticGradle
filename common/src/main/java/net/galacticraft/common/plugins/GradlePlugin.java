@@ -25,65 +25,202 @@
 
 package net.galacticraft.common.plugins;
 
-import javax.annotation.Nonnull;
-
+import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.Convention;
-import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.Task;
+import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.plugins.AppliedPlugin;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.TaskProvider;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+import net.galacticraft.common.plugins.helpers.Extensions;
+import net.galacticraft.common.plugins.helpers.Repositories;
 
 /**
- * A more friendly interface for creating a {@link Plugin} that operates on a {@link Project}.
+ * Base abstract class for Plugin classes to extend that provides commonly used
+ * methods and classes. Can help simply the readability of plugins code-wise
+ * 
+ * @author ROMVoid95
  *
- * <p>Implementations should override the non-deprecated overload of {@code apply}, but until {@code Convention} is removed, either will work.</p>
- *
- * @since 1.0.0
  */
-public interface GradlePlugin extends Plugin<Project> {
-	
+@Accessors(fluent = true)
+@NoArgsConstructor
+public abstract class GradlePlugin implements PluginInterface {
+
+	Class<? extends GradlePlugin> pluginClass;
+
+	@Getter
+	private Project project;
+	private Logger logger;
+	@Getter
+	private PluginContainer plugins;
+	@Getter
+	private TaskContainer tasks;
+	@Getter
+	private Extensions extensions;
+	@Getter
+	private Repositories repositories;
+	@Getter
+	private ConfigurationContainer configurations;
+
+	/**
+	 * Calls the apply method from PluginInterface, then calls the abstract plugin()
+	 * method
+	 *
+	 * @param project the project
+	 */
 	@Override
-	@SuppressWarnings("deprecation") // workaround
-	default void apply(final @Nonnull Project project) {
-		if (GradleCompatibility.HAS_CONVENTION) {
-			this.apply(project, project.getPlugins(), project.getExtensions(), project.getConvention(),
-					project.getTasks());
-		} else {
-			this.apply(project, project.getPlugins(), project.getExtensions(), project.getTasks());
-		}
+	public void apply(Project project) {
+		this.project = project;
+		this.plugins = project.getPlugins();
+		this.tasks = project.getTasks();
+		this.configurations = project.getConfigurations();
+		this.extensions = new Extensions(project);
+		this.repositories = new Repositories(project);
+		this.logger = project.getLogger();
+		plugin();
 	}
 
 	/**
-	 * Applies the plugin.
-	 *
-	 * @param project    the project
-	 * @param plugins    the plugin container
-	 * @param extensions the extension container
-	 * @param convention the convention
-	 * @param tasks      the task container
-	 * @since 1.0.0
-	 * @deprecated for removal since 1.1.0, use
-	 *             {@link #apply(Project, PluginContainer, ExtensionContainer, TaskContainer)}
-	 *             instead
+	 * Replaces the method
+	 * 
+	 * <pre>
+	 *  void apply(Project project)
+	 * </pre>
 	 */
-	@Deprecated
-	default void apply(final @Nonnull Project project, final @Nonnull PluginContainer plugins,
-			final @Nonnull ExtensionContainer extensions, final @Nonnull Convention convention,
-			final @Nonnull TaskContainer tasks) {
-		this.apply(project, plugins, extensions, tasks);
+	public abstract void plugin();
+
+	/**
+	 * Apply plguin.
+	 *
+	 * @param <T>  the generic type
+	 * @param type the type
+	 */
+	protected <T extends Plugin<?>> T applyPlugin(Class<T> type) {
+		return this.plugins.hasPlugin(type) ? null : this.plugins.apply(type);
 	}
 
 	/**
-	 * Applies the plugin.
+	 * Apply plguin.
 	 *
-	 * @param project    the project
-	 * @param plugins    the plugin container
-	 * @param extensions the extension container
-	 * @param tasks      the task container
-	 * @since 1.1.0
+	 * @param <T>      the generic type
+	 * @param pluginId the plugin id
 	 */
-	default void apply(final @Nonnull Project project, final @Nonnull PluginContainer plugins,
-			final @Nonnull ExtensionContainer extensions, final @Nonnull TaskContainer tasks) {
+	protected <T extends Plugin<?>> void applyPlguin(String pluginId) {
+		this.plugins.apply(pluginId);
+	}
+
+	protected AppliedPlugin findPlugin(String pluginId) {
+		return this.project.getPluginManager().findPlugin(pluginId);
+	}
+
+	/**
+	 * Register task.
+	 *
+	 * @param name the name
+	 * @return the task provider
+	 */
+	protected TaskProvider<Task> registerTask(String name) {
+		return this.tasks.register(name);
+	}
+
+	/**
+	 * Register task.
+	 *
+	 * @param <T>  the generic type
+	 * @param name the name
+	 * @param type the type
+	 * @return the task provider
+	 */
+	protected <T extends Task> TaskProvider<T> registerTask(String name, Class<T> type) {
+		return this.tasks.register(name, type);
+	}
+
+	/**
+	 * Register task.
+	 *
+	 * @param <T>                 the generic type
+	 * @param name                the name
+	 * @param type                the type
+	 * @param configurationAction the configuration action
+	 * @return the task provider
+	 */
+	protected <T extends Task> TaskProvider<T> registerTask(String name, Class<T> type,
+			Action<? super T> configurationAction) {
+		return this.tasks.register(name, type, configurationAction);
+	}
+
+	/**
+	 * Register task.
+	 *
+	 * @param name                the name
+	 * @param configurationAction the configuration action
+	 * @return the task provider
+	 */
+	protected TaskProvider<Task> registerTask(String name, Action<? super Task> configurationAction) {
+		return this.tasks.register(name, configurationAction);
+	}
+
+	/**
+	 * Register task.
+	 *
+	 * @param <T>             the generic type
+	 * @param name            the name
+	 * @param type            the type
+	 * @param constructorArgs the constructor args
+	 * @return the task provider
+	 */
+	protected <T extends Task> TaskProvider<T> registerTask(String name, Class<T> type, Object... constructorArgs) {
+		return this.tasks.register(name, type, constructorArgs);
+	}
+
+	protected boolean checkForProperty(String propertyName) {
+		return project.hasProperty(propertyName);
+	}
+
+	protected Boolean booleanProperty(String propertyName, String... object) {
+		return (Boolean) project.findProperty(propertyName);
+	}
+
+	protected String stringProperty(String propertyName, Boolean... obj) {
+		return (String) project.findProperty(propertyName);
+	}
+
+	protected void lifecycle(String format, Object... args) {
+		this.logger.lifecycle(format, args);
+	}
+
+	protected void lifecycle(String message) {
+		this.logger.lifecycle(message);
+	}
+
+	protected void debug(String format, Object... args) {
+		this.logger.debug(format, args);
+	}
+
+	protected void debug(String message) {
+		this.logger.debug(message);
+	}
+
+	protected void error(String format, Object... args) {
+		this.logger.error(format, args);
+	}
+
+	protected void error(String message) {
+		this.logger.error(message);
+	}
+
+	protected void info(String format, Object... args) {
+		this.logger.info(format, args);
+	}
+
+	protected void info(String message) {
+		this.logger.info(message);
 	}
 }

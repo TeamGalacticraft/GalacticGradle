@@ -2,12 +2,6 @@
 
 ![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/net.galacticraft.gradle.publishing.modrinth?style=plastic)
 
-```gradle
-plugins {
-  id "net.galacticraft.gradle.publishing.modrinth" version "1.0.3"
-}
-```
-
 ### Features
 
 - Adds task `publishToModrinth` to the `galactic-gradle` task group

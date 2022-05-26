@@ -5,49 +5,37 @@ plugins {
     id "com.adarshr.test-logger"
 }
 
-sourceSets {
-	test.java.srcDirs = ['src/test/java']
-}
-
-configurations {
-	embed {
-		canBeResolved = true
-	}
-	compileOnly.extendsFrom embed
-}
+def minotaurVersion = '[2,)'
 
 dependencies {
-	implementation 'com.modrinth.minotaur:Minotaur:2.1.2'
-	compileOnly project(':common')
-}
-
-jar {
-	from project(":common").sourceSets.main.output
-	dependsOn project(':common').tasks.jar
+	// modrinth publishing
+	api group: 'com.modrinth.minotaur', name: 'Minotaur', version: minotaurVersion
+    compileOnly project(':common')
 }
 
 gradlePlugin {
     plugins {
-        modrinthPlugin {
-            id = 'net.galacticraft.gradle.publishing.modrinth'
-            displayName = 'Galacticraft Modrinth Publishing'
-            description = 'Plugin for publishing mod artifacts to the Modrinth Platform'
-            implementationClass = 'net.galacticraft.plugins.modrinth.ModrinthUploadPlugin'
-        }
+		modrinthPlugin {
+			id = 'net.galacticraft.gradle.publishing.modrinth'
+			displayName = 'Galacticraft Modrinth Publishing'
+			description = 'Plugin for publishing mod artifacts to the Modrinth Platform'
+			implementationClass = 'net.galacticraft.plugins.publishing.modrinth.ModrinthPlugin'
+		}
     }
 }
 
-pluginBundle {
-    website = 'https://galacticraft.net/'
-    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
-    tags = ['galacticraft', 'plugin']
+jar {
+	from project(":common").sourceSets.main.output
+
+	dependsOn project(':common').tasks.jar
+
+	manifest.from(MANIFEST)
 }
 
-tasks.withType(Javadoc) {
-	failOnError false
-	options.addStringOption('Xdoclint:none', '-quiet')
-	options.addStringOption('encoding', 'UTF-8')
-	options.addStringOption('charSet', 'UTF-8')
+pluginBundle {
+    website = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    tags = ['galacticraft', 'plugin']
 }
 
 publishPlugins {

@@ -46,18 +46,15 @@ import org.cadixdev.gradle.licenser.LicenseExtension;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.gradle.api.GradleException;
-import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.repositories.PasswordCredentials;
 import org.gradle.api.java.archives.Attributes;
 import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
-import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
-import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.testing.Test;
@@ -70,7 +67,8 @@ import org.gradle.plugins.signing.SigningPlugin;
 import org.gradle.plugins.signing.signatory.pgp.PgpSignatoryProvider;
 
 import net.galacticraft.common.Constants;
-import net.galacticraft.common.Versions;
+import net.galacticraft.common.plugins.GradlePlugin;
+import net.galacticraft.common.util.VersionUtil;
 import net.galacticraft.plugins.convention.model.Developer;
 import net.galacticraft.plugins.convention.task.SignJarTask;
 import net.kyori.indra.Indra;
@@ -84,59 +82,56 @@ import net.kyori.indra.git.GitPlugin;
 import net.kyori.indra.git.IndraGitExtension;
 import net.kyori.indra.repository.RemoteRepository;
 
-public abstract class ConventionPlugin implements Plugin<Project> {
-	private @MonotonicNonNull Project project;
-	private @MonotonicNonNull String NAME = "galacticraftConvention";
-	
-	@Override
-	public void apply(Project target) {
-		this.project = target;
-		this.applyPlugins(target.getPlugins());
+public class ConventionPlugin extends GradlePlugin {
 
-		final LicenseExtension license = target.getExtensions().getByType(LicenseExtension.class);
-		final IndraExtension indra = Indra.extension(target.getExtensions());
-		final JavaPluginExtension java = target.getExtensions().getByType(JavaPluginExtension.class);
-		final ConventionExtension galacticraft = create(ConventionExtension.class, indra, license, java);
+	private @MonotonicNonNull Project project;
+	private @MonotonicNonNull String NAME = "teamgc";
+
+	@Override
+	public void plugin() {
+		this.applyPlugins();
+
+		final LicenseExtension license = extensions().find(LicenseExtension.class);
+		final IndraExtension indra = Indra.extension(extensions().container());
+		final JavaPluginExtension java = extensions().find(JavaPluginExtension.class);
+		final ConventionExtension galacticraft = extensions().findOrCreate(NAME, ConventionExtension.class, indra,
+				license, java);
 		indra.includeJavaSoftwareComponentInPublications(true);
 
-		this.publicationMetadata(target);
+		this.publicationMetadata();
 		this.standardJavaTasks();
-		this.licenseHeaders(license);
+		if (plugins().hasPlugin(IndraLicenseHeaderPlugin.class)) {
+			this.licenseHeaders(license);
+		}
 		this.configureJarSigning();
 
-		target.getPlugins().withType(SigningPlugin.class, $ -> target
+		plugins().withType(SigningPlugin.class, $ -> project
 				.afterEvaluate(p -> this.configureSigning(p.getExtensions().getByType(SigningExtension.class))));
 
 		final Manifest manifest = galacticraft.combinedManifest();
-		this.project.getTasks().withType(Jar.class).configureEach(task -> task.getManifest().from(manifest));
-		target.afterEvaluate(proj -> {
+		tasks().withType(Jar.class).configureEach(task -> task.getManifest().from(manifest));
+		project.afterEvaluate(proj -> {
 			this.jarTasks(manifest, proj.getExtensions().getByType(IndraGitExtension.class));
 		});
-	}
-	
-	private <T> T create(Class<T> type, Object... constructionArguments) {
-		return this.project.getExtensions().create(NAME, type, constructionArguments);
 	}
 
 	private void jarTasks(final Manifest manifest, final IndraGitExtension git) {
 		final Attributes attributes = manifest.getAttributes();
-		attributes.putIfAbsent("Specification-Title", this.project.getName());
+		attributes.putIfAbsent("Specification-Title", project().getName());
 		attributes.putIfAbsent("Specification-Vendor", Constants.GITHUB_ORG);
-		attributes.putIfAbsent("Specification-Version", this.project.getVersion());
-		attributes.putIfAbsent("Implementation-Title", this.project.getName());
+		attributes.putIfAbsent("Specification-Version", project().getVersion());
+		attributes.putIfAbsent("Implementation-Title", project().getName());
 		attributes.putIfAbsent("Implementation-Vendor", Constants.GITHUB_ORG);
-		attributes.putIfAbsent("Implementation-Version", this.project.getVersion());
+		attributes.putIfAbsent("Implementation-Version", project().getVersion());
 		git.applyVcsInformationToManifest(manifest);
 	}
 
 	private void standardJavaTasks() {
-		final TaskContainer tasks = this.project.getTasks();
-
-		tasks.withType(JavaCompile.class).configureEach(compile -> {
+		tasks().withType(JavaCompile.class).configureEach(compile -> {
 			compile.getOptions().getCompilerArgs().addAll(Arrays.asList("-Xmaxerrs", "1000"));
 		});
 
-		tasks.withType(Test.class).configureEach(test -> {
+		tasks().withType(Test.class).configureEach(test -> {
 			final TestLoggingContainer testLogging = test.getTestLogging();
 			testLogging.setExceptionFormat(TestExceptionFormat.FULL);
 			testLogging.setShowStandardStreams(true);
@@ -144,26 +139,28 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 		});
 	}
 
-	private void applyPlugins(PluginContainer plugins) {
-		plugins.apply(IndraPlugin.class);
-		plugins.apply(MavenPublishPlugin.class);
-		plugins.apply(IndraLicenseHeaderPlugin.class);
-		plugins.apply(GitPlugin.class);
+	private void applyPlugins() {
+		applyPlugin(IndraPlugin.class);
+		applyPlugin(MavenPublishPlugin.class);
+		if (project().file(ConventionConstants.License.HEADER_FILE).exists()) {
+			applyPlugin(IndraLicenseHeaderPlugin.class);
+		}
+		applyPlugin(GitPlugin.class);
 	}
 
-	private void publicationMetadata(final Project target) {
-		ConventionExtension extension = project.getExtensions().findByType(ConventionExtension.class);
-		IndraExtension indra = project.getExtensions().findByType(IndraExtension.class);
-		target.getGradle().projectsEvaluated(configure -> {
-			target.getExtensions().configure(PublishingExtension.class, publishing -> {
+	private void publicationMetadata() {
+		ConventionExtension extension = extensions().find(ConventionExtension.class);
+		IndraExtension indra = extensions().find(IndraExtension.class);
+		project.getGradle().projectsEvaluated(configure -> {
+			project.getExtensions().configure(PublishingExtension.class, publishing -> {
 				publishing.publications(publication -> {
-					publication.create(target.getName().toLowerCase(), MavenPublication.class, maven -> {
-						maven.setArtifactId(target.getName().toLowerCase());
-						maven.setGroupId(target.getGroup().toString());
-						maven.setVersion(target.getVersion().toString());
+					publication.create(project.getName().toLowerCase(), MavenPublication.class, maven -> {
+						maven.setArtifactId(project.getName().toLowerCase());
+						maven.setGroupId(project.getGroup().toString());
+						maven.setVersion(project.getVersion().toString());
 						maven.pom(pom -> {
-							pom.developers(developers -> { 
-								for(Developer dev : extension.developers()) {
+							pom.developers(developers -> {
+								for (Developer dev : extension.developers()) {
 									developers.developer(developer -> {
 										developer.getId().set(dev.id());
 										developer.getName().set(dev.name());
@@ -181,15 +178,15 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 								organization.getName().set(Constants.GITHUB_ORG);
 								organization.getUrl().set("https://galacticraft.net/");
 							});
-							
-							if(indra.issues().isPresent()) {
+
+							if (indra.issues().isPresent()) {
 								pom.issueManagement(issues -> {
 									Issues i = indra.issues().get();
 									issues.getSystem().set(i.system());
 									issues.getUrl().set(i.url());
 								});
 							}
-							if(indra.scm().isPresent()) {
+							if (indra.scm().isPresent()) {
 								pom.scm(scm -> {
 									SourceCodeManagement s = indra.scm().get();
 									scm.getConnection().set(s.connection());
@@ -197,7 +194,7 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 									scm.getUrl().set(s.connection());
 								});
 							}
-							if(indra.ci().isPresent()) {
+							if (indra.ci().isPresent()) {
 								pom.ciManagement(ci -> {
 									ContinuousIntegration i = indra.ci().get();
 									ci.getSystem().set(i.system());
@@ -207,32 +204,26 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 						});
 					});
 				});
-				
-				final @Nullable String galacticSnapshotsRepo = (String) this.project
+
+				final @Nullable String galacticSnapshotsRepo = (String) project()
 						.findProperty(ConventionConstants.PropertyAttributes.GALACTIC_SNAPSHOT_REPO);
-				final @Nullable String galacticReleasesRepo = (String) this.project
+				final @Nullable String galacticReleasesRepo = (String) project()
 						.findProperty(ConventionConstants.PropertyAttributes.GALACTIC_RELEASE_REPO);
-				
+
 				final Set<RemoteRepository> repositories = new HashSet<RemoteRepository>();
-				
+
 				if (galacticReleasesRepo != null && galacticSnapshotsRepo != null) {
-					repositories.add(
-							RemoteRepository.snapshotsOnly("GalacticSnapshots", galacticSnapshotsRepo)
-					);
-					repositories.add(
-							RemoteRepository.releasesOnly("GalacticReleases", galacticReleasesRepo)
-					);
+					repositories.add(RemoteRepository.snapshotsOnly("GalacticSnapshots", galacticSnapshotsRepo));
+					repositories.add(RemoteRepository.releasesOnly("GalacticReleases", galacticReleasesRepo));
 				} else {
-					repositories.add(
-							RemoteRepository.snapshotsOnly("GalacticSnapshots", ConventionConstants.Repositories.SNAPSHOTS)
-					);
-					repositories.add(
-							RemoteRepository.releasesOnly("GalacticReleases", ConventionConstants.Repositories.RELEASES)
-					);
+					repositories.add(RemoteRepository.snapshotsOnly("GalacticSnapshots",
+							ConventionConstants.Repositories.SNAPSHOTS));
+					repositories.add(RemoteRepository.releasesOnly("GalacticReleases",
+							ConventionConstants.Repositories.RELEASES));
 				}
-				
+
 				repositories.forEach(r -> {
-					if(this.canPublishTo(target, r)) {
+					if (this.canPublishTo(project, r)) {
 						publishing.getRepositories().maven(repo -> {
 							repo.setName(r.name());
 							repo.setUrl(r.url());
@@ -251,32 +242,32 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 
 		if (!project.hasProperty(username))
 			return false;
-		
+
 		if (!project.hasProperty(password))
 			return false;
-		
-		if (repository.releases() && Versions.isRelease(project))
+
+		if (repository.releases() && VersionUtil.isRelease(project))
 			return true;
-		if (repository.snapshots() && Versions.isSnapshot(project))
+		if (repository.snapshots() && VersionUtil.isSnapshot(project))
 			return true;
 
 		return false;
 	}
 
 	private void licenseHeaders(final LicenseExtension licenses) {
-		licenses.setHeader(this.project.getRootProject().file(ConventionConstants.License.HEADER_FILE));
+		licenses.setHeader(project().getRootProject().file(ConventionConstants.License.HEADER_FILE));
 		licenses.properties(ext -> {
-			ext.set("name", this.project.getRootProject().getName());
+			ext.set("name", project().getRootProject().getName());
 		});
 	}
 
 	private void configureSigning(final SigningExtension extension) {
-		final String spongeSigningKey = (String) this.project
+		final String spongeSigningKey = (String) project()
 				.findProperty(ConventionConstants.PropertyAttributes.GALACTIC_SIGNING_KEY);
-		final String spongeSigningPassword = (String) this.project
+		final String spongeSigningPassword = (String) project()
 				.findProperty(ConventionConstants.PropertyAttributes.GALACTIC_SIGNING_PASSWORD);
 		if (spongeSigningKey != null && spongeSigningPassword != null) {
-			final File keyFile = this.project.file(spongeSigningKey);
+			final File keyFile = project().file(spongeSigningKey);
 			if (keyFile.exists()) {
 				final StringBuilder contents = new StringBuilder();
 				try (final BufferedReader reader = new BufferedReader(
@@ -299,19 +290,19 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 	}
 
 	private void configureJarSigning() {
-		if (!this.project.hasProperty(ConventionConstants.PropertyAttributes.GALACTIC_KEY_STORE)) {
+		if (!project().hasProperty(ConventionConstants.PropertyAttributes.GALACTIC_KEY_STORE)) {
 			return;
 		}
 		final String[] outgoingConfigurations = { JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME,
 				JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME };
-		final String keyStoreProp = (String) this.project
+		final String keyStoreProp = (String) project()
 				.property(ConventionConstants.PropertyAttributes.GALACTIC_KEY_STORE);
 		final File fileTemp = new File(keyStoreProp);
 		final File keyStoreFile;
 		if (fileTemp.exists()) {
 			keyStoreFile = fileTemp;
 		} else {
-			final Path dest = this.project.getLayout().getProjectDirectory().file(".gradle/signing-key").getAsFile()
+			final Path dest = project().getLayout().getProjectDirectory().file(".gradle/signing-key").getAsFile()
 					.toPath();
 			try {
 				Files.createDirectories(dest.getParent());
@@ -330,32 +321,31 @@ public abstract class ConventionPlugin implements Plugin<Project> {
 			keyStoreFile.deleteOnExit();
 		}
 
-		this.project.getTasks().matching(it -> it.getName().equals("jar") && it instanceof Jar).whenTaskAdded(task -> {
+		tasks().matching(it -> it.getName().equals("jar") && it instanceof Jar).whenTaskAdded(task -> {
 			final Jar jarTask = (Jar) task;
 			jarTask.getArchiveClassifier().set("unsigned");
-			final TaskProvider<SignJarTask> sign = this.project.getTasks().register("signJar", SignJarTask.class,
-					config -> {
-						config.dependsOn(jarTask);
-						config.from(this.project.zipTree(jarTask.getOutputs().getFiles().getSingleFile()));
-						config.setManifest(jarTask.getManifest());
-						config.getArchiveClassifier().set("");
-						config.getKeyStore().set(keyStoreFile);
-						config.getAlias().set((String) this.project
-								.property(ConventionConstants.PropertyAttributes.GALACTIC_KEY_STORE_ALIAS));
-						config.getStorePassword().set((String) this.project
-								.property(ConventionConstants.PropertyAttributes.GALACTIC_KEY_STORE_PASSWORD));
-					});
+			final TaskProvider<SignJarTask> sign = tasks().register("signJar", SignJarTask.class, config -> {
+				config.dependsOn(jarTask);
+				config.from(project().zipTree(jarTask.getOutputs().getFiles().getSingleFile()));
+				config.setManifest(jarTask.getManifest());
+				config.getArchiveClassifier().set("");
+				config.getKeyStore().set(keyStoreFile);
+				config.getAlias().set(
+						(String) project().property(ConventionConstants.PropertyAttributes.GALACTIC_KEY_STORE_ALIAS));
+				config.getStorePassword().set((String) project()
+						.property(ConventionConstants.PropertyAttributes.GALACTIC_KEY_STORE_PASSWORD));
+			});
 
 			for (final String configName : outgoingConfigurations) {
-				this.project.getConfigurations().named(configName, conf -> {
+				project().getConfigurations().named(configName, conf -> {
 					conf.getOutgoing().artifact(sign);
 				});
 			}
 
-			this.project.getTasks().named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME, t -> t.dependsOn(sign));
+			tasks().named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME, t -> t.dependsOn(sign));
 		});
 
-		this.project.afterEvaluate(p -> {
+		project().afterEvaluate(p -> {
 			for (final String outgoing : outgoingConfigurations) {
 				p.getConfigurations().named(outgoing, conf -> {
 					conf.getOutgoing().getArtifacts().removeIf(it -> Objects.equals(it.getClassifier(), "unsigned"));

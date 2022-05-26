@@ -2,12 +2,6 @@
 
 ![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/net.galacticraft.gradle.publishing.curseforge?style=plastic)
 
-```gradle
-plugins {
-  id "net.galacticraft.gradle.publishing.curseforge" version "1.0.3"
-}
-```
-
 ### Features
 
 - Adds task `publishToCurseforge` to the `galactic-gradle` task group

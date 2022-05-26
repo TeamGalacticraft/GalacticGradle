@@ -1,0 +1,10 @@
+
+  {{#ifContainsType commits type='%%K%%'}}
+    ### %%V%%
+
+    {{#commits}}
+      {{#ifCommitType . type='%%K%%'}}
+  - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}} ([{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}))
+      {{/ifCommitType}}
+    {{/commits}}
+  {{/ifContainsType}}

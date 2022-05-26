@@ -20,26 +20,28 @@ subprojects {
 	ext {
 		notSnapshot = { !version.endsWith('-SNAPSHOT') }
 	}
-	
+
 	group = "net.galacticraft"
-	version = "1.0.4-SNAPSHOT"
-	
+	version = "1.0.5-SNAPSHOT"
+
     java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 
     repositories {
-        maven {
-            name 'galacticraft'
-            url 'https://repo.galacticraft.net/repository/maven-public/'
-        }
-        gradlePluginPortal()
+        maven { url 'https://repo.galacticraft.net/repository/maven/' }
+        maven { url 'https://repo.galacticraft.net/repository/common-proxy/' }
     }
-	
+
 	dependencies {
+		implementation gradleApi()
+		compileOnly 'com.google.guava:guava:31.0.1-jre'
 		implementation "org.jetbrains:annotations:23.0.0"
 		implementation 'org.checkerframework:checker-qual:3.17.0'
-		implementation gradleApi()
+		compileOnly 'org.projectlombok:lombok:1.18.24'
+		annotationProcessor 'org.projectlombok:lombok:1.18.24'
+		testCompileOnly 'org.projectlombok:lombok:1.18.24'
+		testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
 	}
-	
+
 	license {
 		header = rootProject.file("HEADER.txt")
 		properties {
@@ -48,19 +50,19 @@ subprojects {
 			url = "${url}"
 		}
 	}
-	
+
 	jacocoTestReport{
 		reports {
 			xml.required = true
 		}
 		dependsOn test
 	}
-	
+
 	test {
 		useJUnitPlatform()
 		finalizedBy jacocoTestReport
 	}
-	
+		
 	eclipse {
 		classpath {
 			file {
@@ -82,4 +84,18 @@ subprojects {
 		}
 	}
 	checkLicenseMain.dependsOn licenseFormat
+
+	ext {
+		MANIFEST = manifest{
+	        attributes([
+				'Specification-Title'         : "${projectName}",
+				'Specification-Vendor'        : "${organization}",
+				'Specification-Version'       : "${version}",
+				'Implementation-Title'        : "${projectName}",
+				'Implementation-Version'      : "${version}",
+				'Implementation-Vendor'       : "${organization}",
+				'Implementation-Timestamp'    : new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+	        ] as LinkedHashMap)
+	    }
+	}
 }

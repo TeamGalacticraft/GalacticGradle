@@ -2,12 +2,6 @@
 
 ![Gradle Plugin Portal](https://img.shields.io/gradle-plugin-portal/v/net.galacticraft.gradle.publishing?style=plastic)
 
-```gradle
-plugins {
-  id "net.galacticraft.gradle.publishing" version "1.0.3"
-}
-```
-
 ### Features
 
 - Applies both plugins:

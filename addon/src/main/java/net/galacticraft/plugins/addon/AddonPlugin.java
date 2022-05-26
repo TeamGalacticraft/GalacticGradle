@@ -25,70 +25,192 @@
 
 package net.galacticraft.plugins.addon;
 
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectProvider;
-import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.plugins.JavaLibraryPlugin;
+import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.JavaPluginExtension;
+import org.gradle.jvm.toolchain.JavaLanguageVersion;
+import org.gradle.plugins.ide.eclipse.EclipsePlugin;
+import org.gradle.plugins.ide.eclipse.model.EclipseModel;
+import org.gradle.plugins.ide.idea.IdeaPlugin;
 
 import net.galacticraft.common.Constants;
+import net.galacticraft.common.plugins.GradlePlugin;
+import net.galacticraft.common.plugins.GradleVersionUtil;
+import net.galacticraft.plugins.addon.ext.AddonExtension;
+import net.galacticraft.plugins.addon.ext.current.CurrentAddonExtension;
+import net.galacticraft.plugins.addon.ext.legacy.LegacyAddonExtension;
+import net.galacticraft.plugins.addon.task.ListAvailableVersionsTask;
 import net.galacticraft.plugins.addon.util.ForgeGradle;
+import net.galacticraft.plugins.addon.util.XMLParse;
+import net.galacticraft.plugins.addon.util.XMLUrl;
 import net.minecraftforge.gradle.userdev.DependencyManagementExtension;
+import wtf.gofancy.fancygradle.FancyExtension;
+import wtf.gofancy.fancygradle.FancyGradle;
 
-public class AddonPlugin implements Plugin<Project> {
+public class AddonPlugin extends GradlePlugin {
 
-    private AddonExtension addonExtension;
-	
-	private @MonotonicNonNull Project project;
+	public static String GC_CONFIGURATION_NAME = "galacticraft";
+	public static String GC_EXTENSION_NAME = "galacticraft";
+
+	private AddonExtension<?> addonExtension;
 
 	@Override
-    public void apply(final Project project) {
-        this.project = project;
-        
-        project.getLogger().lifecycle("Galacticraft Addon 'GRADLE' Toolset Version " + Constants.VERSION.string());
-        project.getPlugins().apply(JavaLibraryPlugin.class);
-        
-        addonExtension = project.getExtensions().create("addon", AddonExtension.class);
-        
-        project.getRepositories().maven(maven -> {
-        	maven.setName("galacticraft");
-        	maven.setUrl(Constants.Repositories.GALACTICRAFT);
-        	maven.metadataSources(m -> {
-				m.gradleMetadata();
-				m.mavenPom();
-				m.artifact();
-			});
-        });
-        
-        this.project.afterEvaluate(set -> this.addGalacticraftDependency());
-    }
+	public void plugin() {
 
-	private void addGalacticraftDependency() {
-		final NamedDomainObjectProvider<Configuration> galacticraft = this.project.getConfigurations()
-				.register("galacticraft", config -> config.setVisible(true));
+		lifecycle("GalacticGradle Plugin Toolset Version " + Constants.VERSION.string());
 
-		switch (ForgeGradle.getVersion(this.project)) {
-		case VERSION_2:
-				galacticraft.configure(config -> config.defaultDependencies(deps -> {
-					if (addonExtension.getGalacticraftVersion().isPresent()) {
-						final String version = addonExtension.getGalacticraftVersion().get();
-						deps.add(this.project.getDependencies().create(Constants.Dependencies.GC_LEGACY + ":" + version));
-					}
-				}));
-				this.project.getConfigurations().named("deobfCompile")
-						.configure(config -> config.extendsFrom(galacticraft.get()));
-			break;
-		case VERSION_5:
-				final String version = addonExtension.getGalacticraftVersion().get();
-				Dependency dep = project.getExtensions().getByType(DependencyManagementExtension.class)
-				.deobf(project.getDependencies().create(Constants.Dependencies.GC_LEGACY + ":" + version));
-				project.getDependencies().add("implementation", dep);
-			break;
-		default:
-			break;
+		applyPlugin(JavaPlugin.class);
+		applyPlugin(FancyGradle.class);
+		applyPlugin(EclipsePlugin.class);
+		applyPlugin(IdeaPlugin.class);
+
+		if (GradleVersionUtil.currentGradleVersionIsGreaterOrEqualThan("6.0")) {
+			addonExtension = extensions().findOrCreate(AddonPlugin.GC_EXTENSION_NAME, CurrentAddonExtension.class,
+					project().getObjects());
+		} else {
+			debug("Detected older Gradle version, Implementing LegacyAddonExtension");
+			addonExtension = extensions().findOrCreate(AddonPlugin.GC_EXTENSION_NAME, LegacyAddonExtension.class);
 		}
 
+		extensions().find(EclipseModel.class).classpath(cp -> {
+			cp.setDownloadSources(true);
+			cp.setDownloadJavadoc(true);
+		});
+
+		addRepositories();
+
+		extensions().find(JavaPluginExtension.class).toolchain(toolchain -> {
+			toolchain.getLanguageVersion().set(JavaLanguageVersion.of(8));
+		});
+
+		extensions().find(FancyExtension.class).patches(patch -> {
+			patch.getCoremods();
+			patch.getResources();
+		});
+
+		registerTask("listAvailableVersions", ListAvailableVersionsTask.class, task -> {
+			task.setGroup("galactic-gradle");
+			task.setDescription("Shows all available GC-Legacy Versions");
+		});
+
+		project().afterEvaluate(p -> {
+			this.handleProperties();
+			this.addGalacticraftDependency(p);
+
+		});
+	}
+
+	private void addRepositories() {
+		repositories().addMaven("galacticraft-common", Constants.Repositories.MAVEN_COMMON).content(c -> {
+			c.includeModule("net.minecraftforge", "legacydev");
+		});
+
+		repositories().addMaven(Constants.Repositories.MAVEN);
+	}
+
+	private void handleProperties() {
+		if (this.addonExtension.get() instanceof CurrentAddonExtension) {
+			handleGradleProperties();
+		} else {
+			handleLegacyGradleProperties();
+		}
+	}
+
+	private void handleGradleProperties() {
+		CurrentAddonExtension extension = (CurrentAddonExtension) this.addonExtension.get();
+
+		if (extension.getUseLatestRelease().isPresent()) {
+			if (extension.getGcVersion().isPresent()) {
+				throw new GradleException("useLatestRelease() cannot be used with 'gcVersion'");
+			}
+			if (extension.getUseLatestSnapshot().isPresent()) {
+				throw new GradleException("useLatestRelease() cannot be used with useLatestSnapshot()");
+			}
+			String latestRelease = XMLParse.readLatestRelease(XMLUrl.LEGACY_RELEASE);
+			extension.gcVersion(latestRelease);
+		} else if (extension.getUseLatestSnapshot().isPresent()) {
+			if (extension.getGcVersion().isPresent()) {
+				throw new GradleException("useLatestSnapshot() cannot be used with 'gcVersion'");
+			}
+			if (extension.getUseLatestRelease().isPresent()) {
+				throw new GradleException("useLatestSnapshot() cannot be used with useLatestRelease()");
+			}
+			String latestSnapshot = XMLParse.readLatestVersion(XMLUrl.LEGACY_SNAPSHOTS);
+			extension.gcVersion(latestSnapshot);
+		}
+
+		if (!extension.isGcVersionSet()) {
+			throw new GradleException("Galcticraft version has not been specified");
+		}
+
+	}
+
+	private void handleLegacyGradleProperties() {
+		LegacyAddonExtension extension = (LegacyAddonExtension) this.addonExtension.get();
+
+		if (extension.getUseLatestRelease()) {
+			if (extension.isGcVersionSet()) {
+				throw new GradleException("useLatestRelease() cannot be used with 'gcVersion'");
+			}
+			if (extension.getUseLatestSnapshot()) {
+				throw new GradleException("useLatestRelease() cannot be used with useLatestSnapshot()");
+			}
+			String latestRelease = XMLParse.readLatestRelease(XMLUrl.LEGACY_RELEASE);
+			extension.gcVersion(latestRelease);
+		} else if (extension.getUseLatestSnapshot()) {
+			if (extension.isGcVersionSet()) {
+				throw new GradleException("useLatestSnapshot() cannot be used with 'gcVersion'");
+			}
+			if (extension.getUseLatestRelease()) {
+				throw new GradleException("useLatestSnapshot() cannot be used with useLatestRelease()");
+			}
+			String latestSnapshot = XMLParse.readLatestVersion(XMLUrl.LEGACY_SNAPSHOTS);
+			extension.gcVersion(latestSnapshot);
+		}
+
+		if (!extension.isGcVersionSet()) {
+			throw new GradleException("Galcticraft version has not been specified");
+		}
+
+	}
+
+	private void addGalacticraftDependency(Project project) {
+		final NamedDomainObjectProvider<Configuration> galacticraft = configurations()
+				.register("galacticraft");
+		if (addonExtension.getVersion().isPresent()) {
+			final String version = addonExtension.getVersion().get();
+			lifecycle(version);
+			switch (ForgeGradle.getVersion(project())) {
+			case VERSION_2:
+				galacticraft.configure(config -> {
+					config.defaultDependencies(deps -> {
+						deps.add(this.createGalacticraftDependency(version));
+					});
+				});
+
+				project().getConfigurations().named("deobfCompile")
+						.configure(config -> config.extendsFrom(galacticraft.get()));
+				break;
+			case VERSION_5:
+				Dependency dep = project.getExtensions().getByType(DependencyManagementExtension.class)
+						.deobf(createGalacticraftDependency(version));
+				project.getDependencies().add("implementation", dep);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	private String getDependencyString(String version) {
+		return Constants.Dependencies.GC_LEGACY + ":" + version;
+	}
+
+	private Dependency createGalacticraftDependency(String version) {
+		return project().getDependencies().create(getDependencyString(version));
 	}
 }

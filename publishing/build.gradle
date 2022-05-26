@@ -6,34 +6,40 @@ plugins {
 }
 
 dependencies {
-    implementation project(':modrinth')
     implementation project(':curseforge')
+    implementation project(':modrinth')
+    implementation project(':nexus')
+	
     compileOnly project(':common')
 }
 
 gradlePlugin {
     plugins {
-        uploadPlugin {
+        publishingPlugin {
             id = 'net.galacticraft.gradle.publishing'
             displayName = 'Galacticraft Publishing'
             description = 'Applies both the CurseForge & Modrinth Publishing plugins'
-            implementationClass = 'net.galacticraft.plugins.publishing.ModPublihingPlugin'
+            implementationClass = 'net.galacticraft.plugins.publishing.ModPublishingPlugin'
         }
     }
 }
 
 jar {
-	from project(":modrinth").sourceSets.main.output
 	from project(":curseforge").sourceSets.main.output
+	from project(":modrinth").sourceSets.main.output
+	from project(":nexus").sourceSets.main.output
 	from project(":common").sourceSets.main.output
-	
-	dependsOn project(':modrinth').tasks.jar
+
 	dependsOn project(':curseforge').tasks.jar
+	dependsOn project(':modrinth').tasks.jar
+	dependsOn project(':nexus').tasks.jar
 	dependsOn project(':common').tasks.jar
+	
+	manifest.from(MANIFEST)
 }
 
 pluginBundle {
-    website = 'https://galacticraft.net/'
+    website = 'https://github.com/TeamGalacticraft/GalacticGradle'
     vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
     tags = ['galacticraft', 'plugin']
 }

@@ -1,23 +1,19 @@
 plugins {
     id 'java-gradle-plugin'
-    id "org.shipkit.shipkit-changelog"
     id "com.gradle.plugin-publish"
-    id "com.adarshr.test-logger"
-}
-
-sourceSets {
-	test.java.srcDirs = ['src/test/java']
 }
 
 dependencies {
-	implementation 'net.kyori:indra-common:2.0.6'
-	implementation 'gradle.plugin.org.cadixdev.gradle:licenser:0.6.1'
+	api 'net.kyori:indra-common:2.0.6'
+	api 'gradle.plugin.org.cadixdev.gradle:licenser:0.6.1'
 	compileOnly project(':common')
 }
 
 jar {
 	from project(":common").sourceSets.main.output
 	dependsOn project(':common').tasks.jar
+	
+	manifest.from(MANIFEST)
 }
 
 gradlePlugin {
@@ -32,7 +28,7 @@ gradlePlugin {
 }
 
 pluginBundle {
-    website = 'https://galacticraft.net/'
+    website = 'https://github.com/TeamGalacticraft/GalacticGradle'
     vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
     tags = ['galacticraft', 'plugin']
 }

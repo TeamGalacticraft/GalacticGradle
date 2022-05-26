@@ -1,0 +1,3 @@
+{{#tags}}
+{{#ifReleaseTag .}}
+## [{{name}}](https://github.com/{{ownerName}}/{{repoName}}/compare/{{name}}) ({{tagDate .}})

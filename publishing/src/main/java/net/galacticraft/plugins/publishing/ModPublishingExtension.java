@@ -25,27 +25,25 @@
 
 package net.galacticraft.plugins.publishing;
 
-import java.util.Objects;
-
 import javax.inject.Inject;
 
 import org.gradle.api.Action;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 
-import net.galacticraft.plugins.curseforge.CurseUploadExtension;
-import net.galacticraft.plugins.modrinth.ModrinthUploadExtension;
+import net.galacticraft.plugins.publishing.curseforge.CurseExtension;
+import net.galacticraft.plugins.publishing.modrinth.ModrinthPublishExtension;
 
 public class ModPublishingExtension {
 	
-	private final ModrinthUploadExtension modrinthExtension;
-	private final CurseUploadExtension curseforgeExtension;
+	private final ModrinthPublishExtension minotaur;
+	private final CurseExtension curseforge;
 	private final Property<Boolean> debug;
 	
 	@Inject
-	public ModPublishingExtension(ObjectFactory factory, ModrinthUploadExtension modrinthExtension, CurseUploadExtension curseforgeExtension) {
-		this.modrinthExtension = modrinthExtension;
-		this.curseforgeExtension = curseforgeExtension;
+	public ModPublishingExtension(ObjectFactory factory, ModrinthPublishExtension modrinthExtension, CurseExtension curseforgeExtension) {
+		this.minotaur = modrinthExtension;
+		this.curseforge = curseforgeExtension;
 		this.debug = factory.property(Boolean.class).convention(false);
 	}
 	
@@ -57,11 +55,11 @@ public class ModPublishingExtension {
 		this.debug.set(true);
 	}
 	
-    public void modrinth(final Action<? super ModrinthUploadExtension> configureAction) {
-    	Objects.requireNonNull(configureAction, "configureAction").execute(this.modrinthExtension);
+    public void minotaur(final Action<ModrinthPublishExtension> configureAction) {
+    	configureAction.execute(this.minotaur);
     }
     
-    public void curseforge(final Action<? super CurseUploadExtension> configureAction) {
-    	Objects.requireNonNull(configureAction, "configureAction").execute(this.curseforgeExtension);
+    public void curseforge(final Action<CurseExtension> configureAction) {
+    	configureAction.execute(this.curseforge);
     }
 }
