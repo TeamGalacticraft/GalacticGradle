@@ -78,6 +78,9 @@ public class XMLParse {
 		} catch (Exception e) {
 			latestRelease = null;
 		}
-	    return latestRelease.trim().split("\n");
+		if(latestRelease != null) {
+			return latestRelease.trim().split("\n");
+		}
+	    return new String[] {};
 	}
 }

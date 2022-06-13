@@ -39,4 +39,11 @@ public interface AddonExtension<T> extends Supplier<T> {
 	boolean isGcVersionSet();
 	
 	String getDependency();
+	
+	default String getNumericalVersion() {
+		if(getGalacticraftVersion().endsWith("-SNAPSHOT")) {
+			return getGalacticraftVersion().replace("-SNAPSHOT", "");
+		}
+		return getGalacticraftVersion();
+	}
 }

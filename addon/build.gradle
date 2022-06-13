@@ -5,38 +5,30 @@ plugins {
     id "com.adarshr.test-logger"
 }
 
-configurations {
-	provided {
-		canBeResolved = true
-	}
-	api.extendsFrom provided
-}
+version = '1.0.5'
 
 repositories {
+	mavenCentral()
 	maven {
 		url = "https://repo.galacticraft.net/repository/maven-common/"
 		content {
 			includeGroup 'net.minecraftforge.gradle'
+			includeGroup 'wtf.gofancy'
 		}
 	}
-	mavenLocal()
 }
 
 dependencies {
-	implementation 'net.minecraftforge.gradle:ForgeGradle:5.1.40'
+	api 'net.minecraftforge.gradle:ForgeGradle:5.1.45'
 	implementation 'com.google.guava:guava:31.0.1-jre'
 	
-	provided 'wtf.gofancy.fancygradle:wtf.gofancy.fancygradle.gradle.plugin:1.1.1-6'
+	api 'wtf.gofancy.fancygradle:wtf.gofancy.fancygradle.gradle.plugin:1.1.2-0'
 	
 	compileOnly project(':common')
 }
 
 jar {
 	from project(":common").sourceSets.main.output
-
-	from(configurations.provided.collect { it.isDirectory() ? it : zipTree(it) }) {
-		exclude "META-INF/**"
-	}
 
 	dependsOn project(':common').tasks.jar
 	

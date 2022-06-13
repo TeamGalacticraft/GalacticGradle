@@ -40,6 +40,7 @@ public class ListAvailableVersionsTask extends DefaultTask {
 	public void run() {
 		this.getProject().getLogger().lifecycle("All available Galacticraft Versions");
 		List<String> versions = new ArrayList<>();
+		
 		for(String version : XMLParse.readVersions(XMLUrl.LEGACY_RELEASE)) {
 			versions.add(version.trim());
 		}

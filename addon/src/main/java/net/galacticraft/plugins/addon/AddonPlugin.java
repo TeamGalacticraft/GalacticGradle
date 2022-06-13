@@ -47,7 +47,6 @@ import net.galacticraft.plugins.addon.task.ListAvailableVersionsTask;
 import net.galacticraft.plugins.addon.util.ForgeGradle;
 import net.galacticraft.plugins.addon.util.XMLParse;
 import net.galacticraft.plugins.addon.util.XMLUrl;
-import net.minecraftforge.gradle.userdev.DependencyManagementExtension;
 import wtf.gofancy.fancygradle.FancyExtension;
 import wtf.gofancy.fancygradle.FancyGradle;
 
@@ -64,7 +63,6 @@ public class AddonPlugin extends GradlePlugin {
 		lifecycle("GalacticGradle Plugin Toolset Version " + Constants.VERSION.string());
 
 		applyPlugin(JavaPlugin.class);
-		applyPlugin(FancyGradle.class);
 		applyPlugin(EclipsePlugin.class);
 		applyPlugin(IdeaPlugin.class);
 
@@ -87,21 +85,16 @@ public class AddonPlugin extends GradlePlugin {
 			toolchain.getLanguageVersion().set(JavaLanguageVersion.of(8));
 		});
 
-		extensions().find(FancyExtension.class).patches(patch -> {
-			patch.getCoremods();
-			patch.getResources();
-		});
-
 		registerTask("listAvailableVersions", ListAvailableVersionsTask.class, task -> {
 			task.setGroup("galactic-gradle");
 			task.setDescription("Shows all available GC-Legacy Versions");
 		});
 
-		project().afterEvaluate(p -> {
+		project().getGradle().afterProject(p -> {
 			this.handleProperties();
 			this.addGalacticraftDependency(p);
-
 		});
+
 	}
 
 	private void addRepositories() {
@@ -183,7 +176,6 @@ public class AddonPlugin extends GradlePlugin {
 				.register("galacticraft");
 		if (addonExtension.getVersion().isPresent()) {
 			final String version = addonExtension.getVersion().get();
-			lifecycle(version);
 			switch (ForgeGradle.getVersion(project())) {
 			case VERSION_2:
 				galacticraft.configure(config -> {
@@ -192,18 +184,35 @@ public class AddonPlugin extends GradlePlugin {
 					});
 				});
 
-				project().getConfigurations().named("deobfCompile")
+				project().getConfigurations().named("compile")
 						.configure(config -> config.extendsFrom(galacticraft.get()));
 				break;
 			case VERSION_5:
-				Dependency dep = project.getExtensions().getByType(DependencyManagementExtension.class)
-						.deobf(createGalacticraftDependency(version));
-				project.getDependencies().add("implementation", dep);
+				galacticraft.configure(config -> {
+					config.defaultDependencies(deps -> {
+						deps.add(this.createGalacticraftDependency(version));
+					});
+				});
+
+				project().getConfigurations().named("implementation")
+						.configure(config -> config.extendsFrom(galacticraft.get()));
+				
+				this.addFancyGradlePatchExtensions();
 				break;
 			default:
 				break;
 			}
 		}
+	}
+	
+	private void addFancyGradlePatchExtensions() {
+		applyPlugin(FancyGradle.class);
+		extensions().find(FancyExtension.class).patches(patch -> {
+			patch.getCoremods();
+			patch.getResources();
+			patch.getAsm();
+			patch.getMergetool();
+		});
 	}
 
 	private String getDependencyString(String version) {
