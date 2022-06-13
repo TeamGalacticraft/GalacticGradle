@@ -44,6 +44,7 @@ import net.galacticraft.plugins.addon.ext.AddonExtension;
 import net.galacticraft.plugins.addon.ext.current.CurrentAddonExtension;
 import net.galacticraft.plugins.addon.ext.legacy.LegacyAddonExtension;
 import net.galacticraft.plugins.addon.task.ListAvailableVersionsTask;
+import net.galacticraft.plugins.addon.token.TokenReplacerPlugin;
 import net.galacticraft.plugins.addon.util.ForgeGradle;
 import net.galacticraft.plugins.addon.util.XMLParse;
 import net.galacticraft.plugins.addon.util.XMLUrl;
@@ -55,7 +56,7 @@ public class AddonPlugin extends GradlePlugin {
 	public static String GC_CONFIGURATION_NAME = "galacticraft";
 	public static String GC_EXTENSION_NAME = "galacticraft";
 
-	private AddonExtension<?> addonExtension;
+	public static AddonExtension<?> addonExtension;
 
 	@Override
 	public void plugin() {
@@ -65,6 +66,7 @@ public class AddonPlugin extends GradlePlugin {
 		applyPlugin(JavaPlugin.class);
 		applyPlugin(EclipsePlugin.class);
 		applyPlugin(IdeaPlugin.class);
+		applyGradlePlugin(TokenReplacerPlugin.class);
 
 		if (GradleVersionUtil.currentGradleVersionIsGreaterOrEqualThan("6.0")) {
 			addonExtension = extensions().findOrCreate(AddonPlugin.GC_EXTENSION_NAME, CurrentAddonExtension.class,
@@ -106,7 +108,7 @@ public class AddonPlugin extends GradlePlugin {
 	}
 
 	private void handleProperties() {
-		if (this.addonExtension.get() instanceof CurrentAddonExtension) {
+		if (AddonPlugin.addonExtension.get() instanceof CurrentAddonExtension) {
 			handleGradleProperties();
 		} else {
 			handleLegacyGradleProperties();
@@ -114,7 +116,7 @@ public class AddonPlugin extends GradlePlugin {
 	}
 
 	private void handleGradleProperties() {
-		CurrentAddonExtension extension = (CurrentAddonExtension) this.addonExtension.get();
+		CurrentAddonExtension extension = (CurrentAddonExtension) AddonPlugin.addonExtension.get();
 
 		if (extension.getUseLatestRelease().isPresent()) {
 			if (extension.getGcVersion().isPresent()) {
@@ -143,7 +145,7 @@ public class AddonPlugin extends GradlePlugin {
 	}
 
 	private void handleLegacyGradleProperties() {
-		LegacyAddonExtension extension = (LegacyAddonExtension) this.addonExtension.get();
+		LegacyAddonExtension extension = (LegacyAddonExtension) AddonPlugin.addonExtension.get();
 
 		if (extension.getUseLatestRelease()) {
 			if (extension.isGcVersionSet()) {

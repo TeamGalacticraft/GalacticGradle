@@ -26,6 +26,7 @@
 package net.galacticraft.common.plugins;
 
 import org.gradle.api.Action;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -84,9 +85,27 @@ public abstract class GradlePlugin implements PluginInterface {
 		this.extensions = new Extensions(project);
 		this.repositories = new Repositories(project);
 		this.logger = project.getLogger();
+		
+        project.afterEvaluate(new Action<Project>() {
+            @Override
+            public void execute(Project project)
+            {
+                // dont continue if its already failed!
+                if (project.getState().getFailure() != null)
+                    return;
+
+                afterEvaluate();
+            }
+        });
+		
 		plugin();
 	}
 
+    protected void afterEvaluate()
+    {
+    	
+    }
+	
 	/**
 	 * Replaces the method
 	 * 
@@ -103,6 +122,10 @@ public abstract class GradlePlugin implements PluginInterface {
 	 * @param type the type
 	 */
 	protected <T extends Plugin<?>> T applyPlugin(Class<T> type) {
+		return this.plugins.hasPlugin(type) ? null : this.plugins.apply(type);
+	}
+	
+	protected <T extends GradlePlugin> T applyGradlePlugin(Class<T> type) {
 		return this.plugins.hasPlugin(type) ? null : this.plugins.apply(type);
 	}
 
@@ -142,6 +165,36 @@ public abstract class GradlePlugin implements PluginInterface {
 		return this.tasks.register(name, type);
 	}
 
+	protected DefaultTask makeTask(String name)
+    {
+        return makeTask(name, DefaultTask.class);
+    }
+
+	protected DefaultTask maybeMakeTask(String name)
+    {
+        return maybeMakeTask(name, DefaultTask.class);
+    }
+
+	protected <T extends Task> T makeTask(String name, Class<T> type)
+    {
+        return makeTask(project, name, type);
+    }
+
+	protected <T extends Task> T maybeMakeTask(String name, Class<T> type)
+    {
+        return maybeMakeTask(project, name, type);
+    }
+
+	protected static <T extends Task> T maybeMakeTask(Project proj, String name, Class<T> type)
+    {
+        return (T) proj.getTasks().maybeCreate(name, type);
+    }
+
+	protected static <T extends Task> T makeTask(Project proj, String name, Class<T> type)
+    {
+        return (T) proj.getTasks().create(name, type);
+    }
+	
 	/**
 	 * Register task.
 	 *
