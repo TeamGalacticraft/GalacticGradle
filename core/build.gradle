@@ -1,0 +1,44 @@
+plugins {
+	id "org.shipkit.shipkit-changelog"
+	id "com.adarshr.test-logger"
+}
+
+def global = rootProject.ext.global
+
+version = '1.0.0'
+group = "net.galacticraft.gradle"
+
+dependencies {
+	implementation 'org.codehaus.plexus:plexus-utils:3.4.2'
+	implementation global.gson
+	implementation global.commonsText
+	implementation('com.squareup.okhttp3:okhttp:4.10.0') {
+		transitive = false
+	}
+}
+
+jar {
+	manifest(setMainManifestProps)
+}
+
+publishing {
+	repositories {
+		maven {
+			name 'GCGradlePlugins'
+			url 'https://maven.galacticraft.net/repository/gradle-plugins/'
+			credentials {
+				username = project.hasProperty('NEXUS_USER') ? project.NEXUS_USER : ''
+				password = project.hasProperty('NEXUS_PASSWORD') ? project.NEXUS_PASSWORD : ''
+			}
+		}
+	}
+	publications {
+		Core(MavenPublication) {
+			artifactId 'core'
+            groupId group
+            version version
+
+			from components.java
+		}
+	}
+}

@@ -1,38 +1,45 @@
 plugins {
 	id "org.shipkit.shipkit-changelog" version "1.1.15" apply false
-	id "com.gradle.plugin-publish" version "1.0.0-rc-1" apply false
+	id "com.gradle.plugin-publish" version "1.0.0" apply false
 	id "com.adarshr.test-logger" version "3.2.0" apply false
-	id 'org.cadixdev.licenser' version '0.6.1' apply false
+	id 'org.cadixdev.licenser' version '0.7.0-SNAPSHOT' apply false
 }
 
 wrapper {
-    gradleVersion = '7.4.2'
-    distributionType = Wrapper.DistributionType.ALL
+	gradleVersion = '7.5.1'
+	distributionType = Wrapper.DistributionType.ALL
 }
+
+apply from: 'shared.gradle'
 
 subprojects {
 	apply plugin: 'org.cadixdev.licenser'
-    apply plugin: 'maven-publish'
-    apply plugin: 'java-library'
-    apply plugin: 'eclipse'
-    apply plugin: 'jacoco'
+	apply plugin: 'maven-publish'
+	apply plugin: 'java-library'
+	apply plugin: 'eclipse'
+	apply plugin: 'jacoco'
 
-	ext {
-		notSnapshot = { !version.endsWith('-SNAPSHOT') }
+	java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+
+	sourceSets {
+		test {
+			java.srcDirs("src/test/java")
+			resources.srcDirs("src/test/resources")
+		}
+	}
+	
+	configurations {
+		compileOnly.extendsFrom common
 	}
 
-	group = "net.galacticraft"
-	version = "1.0.5-SNAPSHOT"
-
-    java.toolchain.languageVersion = JavaLanguageVersion.of(8)
-
-    repositories {
-        maven { url 'https://repo.galacticraft.net/repository/maven/' }
-        maven { url 'https://repo.galacticraft.net/repository/common-proxy/' }
-    }
+	repositories {
+		maven { url 'https://maven.galacticraft.net/repository/maven-public/' }
+		mavenLocal()
+	}
 
 	dependencies {
 		implementation gradleApi()
+
 		compileOnly 'com.google.guava:guava:31.0.1-jre'
 		implementation "org.jetbrains:annotations:23.0.0"
 		implementation 'org.checkerframework:checker-qual:3.17.0'
@@ -40,6 +47,12 @@ subprojects {
 		annotationProcessor 'org.projectlombok:lombok:1.18.24'
 		testCompileOnly 'org.projectlombok:lombok:1.18.24'
 		testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+		testImplementation 'org.assertj:assertj-core:3.23.1'
+		testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
+		testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.1'
+		testImplementation 'org.mockito:mockito-core:4.8.0'
+		testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
 	}
 
 	license {
@@ -51,6 +64,14 @@ subprojects {
 		}
 	}
 
+	tasks.withType(Javadoc) {
+		failOnError false
+	}
+
+	tasks.withType(Copy).all {
+		duplicatesStrategy 'exclude'
+	}
+	
 	jacocoTestReport{
 		reports {
 			xml.required = true
@@ -62,15 +83,15 @@ subprojects {
 		useJUnitPlatform()
 		finalizedBy jacocoTestReport
 	}
-		
+
+	def srcFolder = file("C:\\gradle\\gradle-${project.gradle.gradleVersion}\\src")
+
 	eclipse {
 		classpath {
 			file {
 				whenMerged { classpath ->
-					String gradleHome = gradle.getGradleHomeDir()
-							.absolutePath
-							.replace(File.separator, '/')
-					String gradleSourceDirectory = "${gradleHome}/src"
+					String version = project.gradle.gradleVersion
+					String gradleSourceDirectory = srcFolder.getAbsolutePath()
 					classpath.entries.each { entry ->
 						if (entry in org.gradle.plugins.ide.eclipse.model.AbstractLibrary
 								&& entry.library.path.contains('generated-gradle-jars')) {
@@ -83,19 +104,21 @@ subprojects {
 			}
 		}
 	}
+
 	checkLicenseMain.dependsOn licenseFormat
 
 	ext {
-		MANIFEST = manifest{
-	        attributes([
-				'Specification-Title'         : "${projectName}",
-				'Specification-Vendor'        : "${organization}",
-				'Specification-Version'       : "${version}",
-				'Implementation-Title'        : "${projectName}",
-				'Implementation-Version'      : "${version}",
-				'Implementation-Vendor'       : "${organization}",
-				'Implementation-Timestamp'    : new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-	        ] as LinkedHashMap)
-	    }
+		setMainManifestProps = { Manifest manifest->
+			manifest.attributes (
+					'Implementation-Title'        : "${projectName}",
+					'Implementation-Version'      : project.version,
+					'Implementation-Vendor'       : "${organization}",
+					'Implementation-Timestamp'    : new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+					)
+		}
+	}
+	
+	tasks.withType(GenerateModuleMetadata) {
+		enabled = false
 	}
 }

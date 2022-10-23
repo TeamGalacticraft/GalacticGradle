@@ -1,0 +1,71 @@
+plugins {
+	id "org.shipkit.shipkit-changelog"
+	id "com.adarshr.test-logger"
+	id "java-gradle-plugin"
+}
+
+group = "net.galacticraft.internal"
+version = '1.0.0'
+
+def global = rootProject.ext.global
+
+repositories{
+	maven {
+		url = "https://maven.galacticraft.net/repository/gradle/"
+		content {
+			includeGroup 'net.galacticraft.gradle'
+		}
+	}
+}
+
+dependencies {
+	implementation 'net.galacticraft.gradle:core:1.0.0'
+	implementation global.gson
+	implementation global.commonsText
+	
+	testImplementation project(":testing")
+}
+
+gradlePlugin {
+    plugins {
+		nexusPublishingPlugin {
+			id = 'net.galacticraft.internal.maven'
+			displayName = 'Galacticraft Maven Repository Artifact Publishing'
+			description = 'Plugin for publishing to the Galacticraft Maven Repo'
+			implementationClass = 'net.galacticraft.internal.maven.GalacticMavenPlugin'
+		}
+    }
+}
+
+jar {
+	manifest(setMainManifestProps)
+}
+
+publishing {
+	repositories {
+		maven {
+			name 'GCGradlePlugins'
+			url 'https://maven.galacticraft.net/repository/gradle-plugins/'
+			credentials {
+				username = project.hasProperty('NEXUS_USER') ? project.NEXUS_USER : ''
+				password = project.hasProperty('NEXUS_PASSWORD') ? project.NEXUS_PASSWORD : ''
+			}
+		}
+	}
+}
+
+model {
+	publishing {
+		publications {
+			pluginMaven {
+				pom.withXml {
+                    def reposNode = asNode().appendNode('repositories')
+                    def repoNode = reposNode.appendNode('repository')
+                    repoNode.appendNode('id', 'gradle-plugins')
+                    repoNode.appendNode('name', 'Gradle Plugins')
+                    repoNode.appendNode('url', 'https://maven.galacticraft.net/repository/gradle/')
+				}
+			}
+		}
+	}
+}

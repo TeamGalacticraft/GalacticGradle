@@ -1,9 +1,12 @@
 plugins {
-    id 'java-gradle-plugin'
-    id "org.shipkit.shipkit-changelog"
-    id "com.gradle.plugin-publish"
-    id "com.adarshr.test-logger"
+	id "org.shipkit.shipkit-changelog"
+	id "com.adarshr.test-logger"
+	id "java-gradle-plugin"
+	id "com.gradle.plugin-publish"
 }
+
+group = "net.galacticraft.publish.curseforge"
+version = '1.0.0'
 
 sourceSets {
 	main.resources.srcDirs = ['src/main/resources']
@@ -17,23 +20,24 @@ configurations {
 }
 
 dependencies {
+	compileOnly project(':core')
+	implementation 'org.codehaus.groovy:groovy-all:3.0.2'
 	implementation 'com.squareup.okhttp3:okhttp:3.14.9'
 	implementation 'com.squareup.okhttp3:logging-interceptor:3.14.9'
 	implementation 'com.google.code.gson:gson:2.9.0'
 	implementation 'com.google.guava:guava:31.0.1-jre'
 	implementation 'net.sf.trove4j:trove4j:3.0.3'
-	provided group: 'net.fabricmc', name: 'fabric-loom', version: '0.7.34'
-
-    compileOnly project(':common')
+	
+	testImplementation project(":testing")
 }
 
 gradlePlugin {
     plugins {
 		curseforgePlugin {
-			id = 'net.galacticraft.gradle.publishing.curseforge'
+			id = 'net.galacticraft.publish.curseforge'
 			displayName = 'Galacticraft Curseforge Publishing'
 			description = 'Plugin for publishing mod artifacts to the Curseforge Platform'
-			implementationClass = 'net.galacticraft.plugins.publishing.curseforge.CursePlugin'
+			implementationClass = 'net.galacticraft.publish.curseforge.CursePlugin'
 		}
     }
 }
@@ -42,19 +46,15 @@ jar {
 	from(configurations.provided.asFileTree.files.collect { zipTree(it) }) {
 		exclude '*.xml', '*.json', '*.xml', '*.pom', '*.properties', 'META-INF/**'
 	}
-	from project(":common").sourceSets.main.output
+	from project(":core").sourceSets.main.output
+	
+	dependsOn project(':core').tasks.jar
 
-	dependsOn project(':common').tasks.jar
-
-	manifest.from(MANIFEST)
+	manifest(setMainManifestProps)
 }
 
 pluginBundle {
     website = 'https://github.com/TeamGalacticraft/GalacticGradle'
     vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
-    tags = ['galacticraft', 'plugin']
-}
-
-publishPlugins {
-    onlyIf notSnapshot
+    tags = ['galacticraft', 'curseforge', 'publishing']
 }

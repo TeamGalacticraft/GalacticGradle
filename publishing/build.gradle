@@ -1,25 +1,28 @@
 plugins {
-    id 'java-gradle-plugin'
-    id "org.shipkit.shipkit-changelog"
-    id "com.gradle.plugin-publish"
-    id "com.adarshr.test-logger"
+	id "org.shipkit.shipkit-changelog"
+	id "com.adarshr.test-logger"
+	id "java-gradle-plugin"
+	id "com.gradle.plugin-publish"
 }
 
+group = "net.galacticraft.publish"
+version = '1.0.0'
+
 dependencies {
+	compileOnly project(':core')
     implementation project(':curseforge')
     implementation project(':modrinth')
-    implementation project(':nexus')
 	
-    compileOnly project(':common')
+	testImplementation project(":testing")
 }
 
 gradlePlugin {
     plugins {
         publishingPlugin {
-            id = 'net.galacticraft.gradle.publishing'
+            id = 'net.galacticraft.publish'
             displayName = 'Galacticraft Publishing'
             description = 'Applies both the CurseForge & Modrinth Publishing plugins'
-            implementationClass = 'net.galacticraft.plugins.publishing.ModPublishingPlugin'
+            implementationClass = 'net.galacticraft.publish.ModPublishingPlugin'
         }
     }
 }
@@ -27,23 +30,19 @@ gradlePlugin {
 jar {
 	from project(":curseforge").sourceSets.main.output
 	from project(":modrinth").sourceSets.main.output
-	from project(":nexus").sourceSets.main.output
-	from project(":common").sourceSets.main.output
-
+	from project(":core").sourceSets.main.output
+	
+	dependsOn project(':core').tasks.jar
 	dependsOn project(':curseforge').tasks.jar
 	dependsOn project(':modrinth').tasks.jar
-	dependsOn project(':nexus').tasks.jar
-	dependsOn project(':common').tasks.jar
 	
-	manifest.from(MANIFEST)
+	from(configurations.common.collect { it.isDirectory() ? it : zipTree(it) })
+	
+	manifest(setMainManifestProps)
 }
 
 pluginBundle {
     website = 'https://github.com/TeamGalacticraft/GalacticGradle'
     vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
-    tags = ['galacticraft', 'plugin']
-}
-
-publishPlugins {
-    onlyIf notSnapshot
+    tags = ['galacticraft', 'modrinth', 'mod-publishing', 'modrinth-publishing', 'curseforge']
 }

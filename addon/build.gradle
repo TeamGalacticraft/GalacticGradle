@@ -1,57 +1,82 @@
 plugins {
-    id 'java-gradle-plugin'
-    id "org.shipkit.shipkit-changelog"
-    id "com.gradle.plugin-publish"
-    id "com.adarshr.test-logger"
+	id "org.shipkit.shipkit-changelog"
+	id "com.adarshr.test-logger"
+	id "java-gradle-plugin"
+	id "com.gradle.plugin-publish"
 }
 
-version = '1.0.6'
+group = "net.galacticraft.addon"
+version = '1.0.0'
 
 repositories {
 	mavenCentral()
 	maven {
-		url = "https://repo.galacticraft.net/repository/maven-common/"
+		url = "https://maven.galacticraft.net/repository/gradle/"
 		content {
-			includeGroup 'net.minecraftforge.gradle'
+			includeGroup 'net.galacticraft.gradle'
+		}
+	}
+	maven {
+		url = "https://maven.galacticraft.net/repository/legacy-common/"
+		content {
 			includeGroup 'wtf.gofancy'
+		}
+	}
+	maven { url = 'https://maven.minecraftforge.net' }
+}
+
+dependencies {
+	implementation 'net.galacticraft.gradle:core:1.0.0'
+	compileOnlyApi 'com.google.guava:guava:31.0.1-jre'
+	common 'net.minecraftforge.gradle:ForgeGradle:[5.1,)'
+	common 'wtf.gofancy:FancyGradle:1.1.2-3'
+
+	testImplementation project(":testing")
+}
+
+jar {
+	from(configurations.common.collect { it.isDirectory() ? it : zipTree(it) }) {
+		exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA",
+				"META-INF/LICENSE*", "META-INF/DEPENDENCIES", "META-INF/NOTICE*",
+				"META-INF/versions/9/module-info.class", "META-INF/maven/**"
+	}
+	manifest(setMainManifestProps)
+	duplicatesStrategy 'exclude'
+}
+
+model {
+	publishing {
+		publications {
+			pluginMaven {
+				pom.withXml {
+					def reposNode = asNode().appendNode('repositories')
+					def repoNode = reposNode.appendNode('repository')
+				
+					repoNode.appendNode('id', 'gc-core')
+					repoNode.appendNode('name', 'GCCore')
+					repoNode.appendNode('url', 'https://maven.galacticraft.net/repository/gradle/')
+				}
+			}
 		}
 	}
 }
 
-dependencies {
-	api 'net.minecraftforge.gradle:ForgeGradle:5.1.45'
-	implementation 'com.google.guava:guava:31.0.1-jre'
-	
-	api 'wtf.gofancy.fancygradle:wtf.gofancy.fancygradle.gradle.plugin:1.1.2-0'
-	
-	compileOnly project(':common')
-}
-
-jar {
-	from project(":common").sourceSets.main.output
-
-	dependsOn project(':common').tasks.jar
-	
-	manifest.from(MANIFEST)
-}
-
 gradlePlugin {
-    plugins {
-        addonPlugin {
-            id = 'net.galacticraft.gradle.addon'
+	plugins {
+		addonPlugin {
+			id = 'net.galacticraft.addon'
 			displayName = 'Galacticraft Addon Development'
-            description = 'Gradle Plugin for developing Galacticraft Addons'
-            implementationClass = 'net.galacticraft.plugins.addon.AddonPlugin'
-        }
-    }
+			description = 'Gradle Plugin for developing Galacticraft Addons'
+			implementationClass = 'net.galacticraft.addon.AddonPlugin'
+		}
+	}
 }
 
 pluginBundle {
-    website = 'https://github.com/TeamGalacticraft/GalacticGradle'
-    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
-    tags = ['galacticraft', 'plugin']
-}
-
-publishPlugins {
-    onlyIf notSnapshot
+	website = 'https://github.com/TeamGalacticraft/GalacticGradle/tree/master/addon'
+	vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+	tags = [
+		'galacticraft',
+		'galacticraft-addon'
+	]
 }

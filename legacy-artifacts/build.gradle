@@ -1,0 +1,44 @@
+plugins {
+	id "org.shipkit.shipkit-changelog"
+	id "com.adarshr.test-logger"
+	id "java-gradle-plugin"
+}
+
+group = "net.galacticraft.internal.artifacts.legacy"
+version = '1.0.0'
+
+dependencies {
+	compileOnly project(':core')
+	compileOnly project(':maven')
+}
+
+gradlePlugin {
+    plugins {
+		nexusPublishingPlugin {
+			id = 'net.galacticraft.internal.artifacts.legacy'
+			displayName = 'Internal Plugin for Galacticraft-Legacy\'s Artifact Tasks'
+			description = 'Internal Plugin for Galacticraft-Legacy\'s Artifact Tasks'
+			implementationClass = 'net.galacticraft.internal.artifacts.legacy.LegacyArtifactsPlugin'
+		}
+    }
+}
+
+jar {
+	from project(":core").sourceSets.main.output
+	
+	dependsOn project(':core').tasks.jar
+	manifest(setMainManifestProps)
+}
+
+publishing {
+	repositories {
+		maven {
+			name 'GCGradlePlugins'
+			url 'https://maven.galacticraft.net/repository/gradle-plugins/'
+			credentials {
+				username = project.hasProperty('NEXUS_USER') ? project.NEXUS_USER : ''
+				password = project.hasProperty('NEXUS_PASSWORD') ? project.NEXUS_PASSWORD : ''
+			}
+		}
+	}
+}

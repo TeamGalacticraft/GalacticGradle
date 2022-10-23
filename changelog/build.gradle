@@ -1,35 +1,34 @@
 plugins {
-    id 'java-gradle-plugin'
-    id "org.shipkit.shipkit-changelog"
-    id "com.gradle.plugin-publish"
-    id "com.adarshr.test-logger"
+	id "org.shipkit.shipkit-changelog"
+	id "com.adarshr.test-logger"
+	id "java-gradle-plugin"
+	id "com.gradle.plugin-publish"
 }
 
-def changelogVersion = '[1,)'
+group = "net.galacticraft.changelog"
+version = '1.0.0'
 
 dependencies {
-	implementation group: 'gradle.plugin.se.bjurr.gitchangelog', name: 'git-changelog-gradle-plugin', version: changelogVersion
-	implementation 'se.bjurr.gitchangelog:git-changelog-lib:1.166.1'
-	implementation group: 'org.eclipse.jgit', name: 'org.eclipse.jgit', version: '5.10.0.202012080955-r'
+	compileOnly project(':core')
+	implementation 'se.bjurr.gitchangelog:git-changelog-lib:1.168.3'
 	
-	compileOnly project(':common')
+	testImplementation project(":testing")
 }
 
 jar {
-	from project(":common").sourceSets.main.output
-
-	dependsOn project(':common').tasks.jar
-
-	manifest.from(MANIFEST)
+	from project(":core").sourceSets.main.output
+	
+	dependsOn project(':core').tasks.jar
+	manifest(setMainManifestProps)
 }
 
 gradlePlugin {
     plugins {
         curseforgePlugin {
-            id = 'net.galacticraft.gradle.changelog'
+            id = 'net.galacticraft.changelog'
             displayName = 'Galacticraft Changelog Generator'
             description = 'Plugin that aids in project Changelog generation'
-            implementationClass = 'net.galacticraft.plugins.changelog.ChangelogPlugin'
+            implementationClass = 'net.galacticraft.changelog.ChangelogPlugin'
         }
     }
 }
@@ -37,10 +36,5 @@ gradlePlugin {
 pluginBundle {
     website = 'https://github.com/TeamGalacticraft/GalacticGradle'
     vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
-    tags = ['galacticraft', 'plugin']
+    tags = ['galacticraft', 'changelog']
 }
-
-publishPlugins {
-    onlyIf notSnapshot
-}
-

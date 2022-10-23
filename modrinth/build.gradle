@@ -1,43 +1,47 @@
 plugins {
-    id 'java-gradle-plugin'
-    id "org.shipkit.shipkit-changelog"
-    id "com.gradle.plugin-publish"
-    id "com.adarshr.test-logger"
+	id "org.shipkit.shipkit-changelog"
+	id "com.adarshr.test-logger"
+	id "java-gradle-plugin"
+	id "com.gradle.plugin-publish"
 }
+
+group = "net.galacticraft.publish.modrinth"
+version = '1.0.0'
 
 def minotaurVersion = '[2,)'
 
+repositories {
+	gradlePluginPortal()
+}
+
 dependencies {
-	// modrinth publishing
-	api group: 'com.modrinth.minotaur', name: 'Minotaur', version: minotaurVersion
-    compileOnly project(':common')
+	compileOnly project(':core')
+	implementation group: 'com.modrinth.minotaur', name: 'Minotaur', version: minotaurVersion
+	
+	testImplementation project(":testing")
 }
 
 gradlePlugin {
     plugins {
 		modrinthPlugin {
-			id = 'net.galacticraft.gradle.publishing.modrinth'
+			id = 'net.galacticraft.publish.modrinth'
 			displayName = 'Galacticraft Modrinth Publishing'
 			description = 'Plugin for publishing mod artifacts to the Modrinth Platform'
-			implementationClass = 'net.galacticraft.plugins.publishing.modrinth.ModrinthPlugin'
+			implementationClass = 'net.galacticraft.publish.modrinth.ModrinthPlugin'
 		}
     }
 }
 
 jar {
-	from project(":common").sourceSets.main.output
-
-	dependsOn project(':common').tasks.jar
-
-	manifest.from(MANIFEST)
+	from(configurations.common.collect { it.isDirectory() ? it : zipTree(it) })
+	from project(":core").sourceSets.main.output
+	
+	dependsOn project(':core').tasks.jar
+	manifest(setMainManifestProps)
 }
 
 pluginBundle {
     website = 'https://github.com/TeamGalacticraft/GalacticGradle'
     vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
-    tags = ['galacticraft', 'plugin']
-}
-
-publishPlugins {
-    onlyIf notSnapshot
+    tags = ['galacticraft', 'modrinth', 'mod-publishing', 'modrinth-publishing']
 }

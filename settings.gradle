@@ -1,3 +1,15 @@
+pluginManagement {
+    repositories {
+		mavenLocal()
+		maven {
+			url = 'https://repo.galacticraft.net/repository/common-proxy/'
+		}
+		maven {
+			url = 'https://repo.galacticraft.net/repository/maven-common/'
+		}
+    }
+}
+
 rootProject.name = "GalacticGradle"
 
-include 'common', 'convention', 'addon', 'curseforge', 'modrinth', 'nexus', 'changelog', 'publishing'
+include 'core', 'testing', 'addon', 'curseforge', 'modrinth', 'addonpublish', 'changelog', 'publishing', 'maven', 'legacy-artifacts'

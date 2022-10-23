@@ -1,0 +1,8 @@
+dependencies {
+    api 'net.kyori:mammoth-test:1.3.0'
+	api project(":core")
+}
+
+tasks.javadoc {
+	enabled = false
+}
