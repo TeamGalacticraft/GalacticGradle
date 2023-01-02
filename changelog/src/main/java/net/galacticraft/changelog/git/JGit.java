@@ -387,9 +387,7 @@ public class JGit
                 }
 
                 String vString = tag.getName().replace(Constants.R_TAGS, "");
-                System.out.println(vString);
                 Version tagVersion = Version.of(vString);
-                System.out.println(tagVersion.toString());
                 if (stableOnly && tagVersion.isStable())
                     versionMap.put(tagVersion, id);
                 else

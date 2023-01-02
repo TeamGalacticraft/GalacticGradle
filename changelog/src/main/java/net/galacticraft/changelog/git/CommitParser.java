@@ -84,8 +84,6 @@ public class CommitParser
         
         Map<Version, ObjectId> tagMap = git.getTagToCommitMap(false);
         
-        
-        
         if (!tagMap.containsKey(version))
             throw new IllegalArgumentException(
                 "The tag: " + version.toString() + " does not exist in the repository");
