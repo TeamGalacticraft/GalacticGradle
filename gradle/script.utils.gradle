@@ -1,0 +1,15 @@
+def getGalacticMaven() {
+	maven {
+	    name 'GCGradlePlugins'
+		url 'https://maven.galacticraft.net/repository/gradle-plugins/'
+		credentials {
+			username = project.hasProperty('NEXUS_USERNAME') ? project.NEXUS_USERNAME : ''
+			password = project.hasProperty('NEXUS_PASSWORD') ? project.NEXUS_PASSWORD : ''
+		}
+	}
+
+}
+
+ext {
+    getGalacticMaven = this.&getGalacticMaven
+}

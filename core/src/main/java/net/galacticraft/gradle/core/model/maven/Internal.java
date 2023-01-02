@@ -30,9 +30,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.gradle.api.GradleException;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 
+import net.galacticraft.gradle.core.plugin.GradlePlugin.ConditionalLog;
 import net.galacticraft.gradle.core.project.GalacticProject;
 import net.galacticraft.gradle.core.util.IOHelper;
 import net.galacticraft.gradle.core.util.IOWrapper;
@@ -48,14 +47,17 @@ public final class Internal
 {
 	private static String	pomFile			= "%s-%s.pom";
 	private static String	metadataFile	= "maven-metadata.xml";
-	static Logger			logger = Logging.getLogger(Internal.class.getSimpleName());
+	static ConditionalLog	logger;
 
 	static Optional<Metadata> _getMetadata(URL repositoryUrl, GalacticProject project)
 	{
 		Metadata	metadata	= null;
 		IOWrapper	wrapper		= IOHelper.getIOWrapper(project, repositoryUrl, metadataFile, null);
 
-		logger.debug("Retreiving Metadata from: " + wrapper.getUrl().toString());
+		if (logger != null)
+			logger.lifecycle("Retreiving Metadata from: " + wrapper.getUrl().toString());
+		else
+			System.out.println("Retreiving Metadata from: " + wrapper.getUrl().toString());
 
 		try
 		{
@@ -74,7 +76,10 @@ public final class Internal
 		Model		pomModel	= null;
 		IOWrapper	wrapper		= IOHelper.getIOWrapper(project, repositoryUrl, filename, version.toString());
 
-		logger.debug("Retreiving POM from: " + wrapper.getUrl().toString());
+		if (logger != null)
+			logger.lifecycle("Retreiving POM from: " + wrapper.getUrl().toString());
+		else
+			System.out.println("Retreiving POM from: " + wrapper.getUrl().toString());
 
 		try
 		{
@@ -93,7 +98,10 @@ public final class Internal
 		String		filename	= version.toString() + "/" + metadataFile;
 		IOWrapper	wrapper		= IOHelper.getIOWrapper(project, repositoryUrl, filename, null);
 
-		logger.debug("Retreiving Snapshot Metadata from: " + wrapper.getUrl().toString());
+		if (logger != null)
+			logger.lifecycle("Retreiving Snapshot Metadata from: " + wrapper.getUrl().toString());
+		else
+			System.out.println("Retreiving Snapshot Metadata from: " + wrapper.getUrl().toString());
 
 		try
 		{
@@ -110,10 +118,11 @@ public final class Internal
 	{
 		String	filename	= null;
 		Model	pomModel	= null;
+		Optional<Metadata> snapshotMetadata = _getSnapshotMetadata(repositoryUrl, project, version);
 
-		if (_getSnapshotMetadata(repositoryUrl, project, version).isPresent())
+		if (snapshotMetadata.isPresent())
 		{
-			Metadata				metadata	= _getSnapshotMetadata(repositoryUrl, project, version).get();
+			Metadata				metadata	= snapshotMetadata.get();
 			List<SnapshotVersion>	snapshots	= metadata.getVersioning().getSnapshotVersions();
 
 			Optional<SnapshotVersion> sv = snapshots.stream().filter(v -> v.getExtension().equals("pom")).findFirst();
@@ -130,6 +139,12 @@ public final class Internal
 			throw new GradleException("Failed to parse METADATA from: " + repositoryUrl);
 		}
 		IOWrapper wrapper = IOHelper.getIOWrapper(project, repositoryUrl, filename, version.toString());
+
+		if (logger != null)
+			logger.lifecycle("Retreiving Snapshot POM from: " + wrapper.getUrl().toString());
+		else
+			System.out.println("Retreiving Snapshot POM from: " + wrapper.getUrl().toString());
+
 		try
 		{
 			if (wrapper.getInputStream() != null)

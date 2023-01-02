@@ -25,10 +25,6 @@
 
 package net.galacticraft.addon.task;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.gradle.api.DefaultTask;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.provider.Property;
@@ -36,8 +32,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 
 import net.galacticraft.addon.util.StringBuild;
-import net.galacticraft.gradle.core.version.Version;
 import net.galacticraft.gradle.core.project.GalacticProject;
+import net.galacticraft.gradle.core.version.list.VersionSet;
 
 public abstract class ListAvailableVersionsTask extends DefaultTask
 {
@@ -48,54 +44,47 @@ public abstract class ListAvailableVersionsTask extends DefaultTask
 	@TaskAction
 	public void run()
 	{
-		Logger log = this.getProject().getLogger();
-		StringBuild string = StringBuild.start();
-		GalacticProject project = getGalacticProject().get();
-		List<Version> versions = project.getMavenModel().readVersions();
+		Logger			log			= this.getProject().getLogger();
+		StringBuild		string		= StringBuild.start();
+		GalacticProject	project		= getGalacticProject().get();
+		VersionSet		versions	= project.readVersions();
 
-		if (!versions.isEmpty())
+		if (versions.isEmpty())
 		{
-			List<Version>	snapshots	= new ArrayList<>();
-			List<Version>	releases	= new ArrayList<>();
-
-			snapshots.addAll(versions.stream().filter(Version::isSnapshotVersion).collect(Collectors.toList()));
-			releases.addAll(versions.stream().filter(Version::isStable).collect(Collectors.toList()));
-
+			string.appendln("No versions found!");
+			log.lifecycle(string.toString());
+		} else
+		{
 			string.ln();
 			string.appendln("Available Galacticraft-Legacy Versions");
 			string.ln();
 
-			if (!snapshots.isEmpty())
+			if (!versions.extractSnapshots().isEmpty())
 			{
 				string.appendln("[SNAPSHOTS]");
 				string.appendln("-----------");
-				snapshots.forEach(sv -> {
+				versions.extractSnapshots().forEach(sv ->
+				{
 					string.appendln("> " + sv.toString());
 				});
 				string.ln();
-				string.appendln("lastestSnapshot() = " + project.getMavenModel().readLatestSnapshot().toString());
+				string.appendln("lastestSnapshot() = " + project.readLatestSnapshot().toString());
 				string.ln();
 			}
 
-			if (!releases.isEmpty())
+			if (!versions.extractReleases().isEmpty())
 			{
 				string.appendln("[RELEASES]");
 				string.appendln("----------");
-				releases.forEach(rv -> {
+				versions.extractReleases().forEach(rv ->
+				{
 					string.appendln("> " + rv.toString());
 				});
 				string.ln();
-				string.appendln("latestRelease() = " + project.getMavenModel().readLatestRelease().toString());
+				string.appendln("latestRelease() = " + project.readLatestRelease().toString());
 				string.ln();
 			}
 
-			if (snapshots.isEmpty() && releases.isEmpty())
-			{
-				string.appendln("No versions found!");
-			}
-			
-			
-			
 			log.lifecycle(string.toString());
 		}
 	}

@@ -1,0 +1,33 @@
+version = '1.0.0'
+group = "net.galacticraft.internal"
+
+dependencies {
+	suite(libs.galactic.core) { changing = true }
+	implementation libs.gson
+	implementation libs.commons.text
+	
+	testImplementation project(":testing")
+}
+
+
+
+gradlePlugin {
+    plugins {
+		nexusPublishingPlugin {
+			id = 'net.galacticraft.internal.maven'
+			implementationClass = 'net.galacticraft.internal.maven.GalacticMavenPlugin'
+		}
+    }
+}
+
+jar {
+	manifest(setMainManifestProps)
+}
+
+publishing {
+	publications {
+		pluginMaven(MavenPublication) {
+			artifactId = 'maven'
+		}
+	}
+}

@@ -27,15 +27,11 @@ package net.galacticraft.gradle.core.model.maven;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 import javax.annotation.Nullable;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
+import net.galacticraft.gradle.core.plugin.GradlePlugin.ConditionalLog;
 import net.galacticraft.gradle.core.project.GalacticProject;
 import net.galacticraft.gradle.core.util.Checks;
 import net.galacticraft.gradle.core.util.IOHelper;
@@ -45,105 +41,54 @@ import net.galacticraft.gradle.core.xml.model.Model;
 
 public abstract class MavenModelBase
 {
-	protected final GalacticProject	project;
-	private final List<URL>			repositoryUrlSet;
+	protected GalacticProject	project;
+	private URL					repositoryUrl;
 
-	MavenModelBase(GalacticProject project)
+	public void setProject(GalacticProject project)
 	{
 		this.project = project;
-		this.repositoryUrlSet = new ArrayList<>();
 	}
 
-	public void addRepositoryUrl(URI url)
+	public void setLogger(ConditionalLog logger)
+	{
+		Internal.logger = logger;
+	}
+
+	public void setRepositoryUrl(URI url)
 	{
 		URL repositoryUrl = IOHelper.toURL(url);
-		this.repositoryUrlSet.add(repositoryUrl);
+		this.repositoryUrl = repositoryUrl;
 	}
 
 	protected Optional<Metadata> getMetadata()
 	{
-		this.runChecks(repositoryUrlSet, "getMetadata()");
-
-		if(repositoryUrlSet.size() > 1)
-		{
-			Optional<Metadata> metadata = null;
-			for (URL repositoryUrl : this.repositoryUrlSet)
-			{
-				Optional<Metadata> i = Internal._getMetadata(repositoryUrl, project);
-				if (i.isPresent() && metadata == null)
-				{
-					metadata = i;
-				}
-			}
-			return metadata;
-		}
-		return Internal._getMetadata(repositoryUrlSet.get(0), project);
+		this.runChecks(repositoryUrl, "getMetadata()");
+		return Internal._getMetadata(repositoryUrl, project);
 	}
 
 	protected Optional<Metadata> getSnapshotMetadata(Version version)
 	{
-		this.runChecks(repositoryUrlSet, "getSnapshotMetadata()");
-
-		if(repositoryUrlSet.size() > 1)
-		{
-			Optional<Metadata> metadata = null;
-			for (URL repositoryUrl : this.repositoryUrlSet)
-			{
-				Optional<Metadata> i = Internal._getSnapshotMetadata(repositoryUrl, project, version);
-				if (i.isPresent() && metadata == null)
-				{
-					metadata = i;
-				}
-			}
-			return metadata;
-		}
-		return Internal._getSnapshotMetadata(repositoryUrlSet.get(0), project, version);
+		this.runChecks(repositoryUrl, "getSnapshotMetadata()");
+		return Internal._getSnapshotMetadata(repositoryUrl, project, version);
 	}
 
 	protected Optional<Model> getSnapshotPom(String artifactId, Version version)
 	{
-		this.runChecks(repositoryUrlSet, "getSnapshotPom()");
-		if(repositoryUrlSet.size() > 1)
-		{
-			Optional<Model> metadata = null;
-			for (URL repositoryUrl : this.repositoryUrlSet)
-			{
-				Optional<Model> i = Internal._getSnapshotPom(repositoryUrl, project, version);
-				if (i.isPresent() && metadata == null)
-				{
-					metadata = i;
-				}
-			}
-			return metadata;
-		}
-		return Internal._getSnapshotPom(repositoryUrlSet.get(0), project, version);
+		this.runChecks(repositoryUrl, "getSnapshotPom()");
+		return Internal._getSnapshotPom(repositoryUrl, project, version);
 	}
 
 	protected Optional<Model> getPom(String artifactId, Version version)
 	{
-		this.runChecks(repositoryUrlSet, "getPom()");
-		if(repositoryUrlSet.size() > 1)
-		{
-			Optional<Model> pomModel = null;
-			for (URL repositoryUrl : this.repositoryUrlSet)
-			{
-				Optional<Model> i = Internal._getPom(repositoryUrl, project, version);
-				if (i.isPresent() && pomModel == null)
-				{
-					pomModel = i;
-				}
-			}
-			return pomModel;
-		}
-		return Internal._getPom(repositoryUrlSet.get(0), project, version);
+		this.runChecks(repositoryUrl, "getPom()");
+		return Internal._getPom(repositoryUrl, project, version);
 	}
 
-	private <T extends @NonNull Collection<?>> void runChecks(@Nullable T collection, String method)
+	private <T extends Object> void runChecks(@Nullable T object, String method)
 	{
+		Checks.notNull(project, "GalacticraftProject is not set and returning null. Did you use 'setProject(GalacticProject project)'?");
 		String errm = String.format("[%s] MavenArtifactRepository Set<URL> for " + project.getId() + "is Null and shouldn't be", method);
-		String emtym = String.format("[%s] MavenArtifactRepository Set<URL> for " + project.getId() + "is empty", method);
-		
-		Checks.notNullOrEmpty(collection, errm, emtym);
+		Checks.notNull(object, errm);
 	}
 
 }

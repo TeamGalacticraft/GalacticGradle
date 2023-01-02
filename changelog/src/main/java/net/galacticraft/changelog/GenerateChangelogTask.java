@@ -31,18 +31,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 import org.gradle.api.DefaultTask;
-import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
-import org.gradle.api.tasks.OutputFile;
-import org.gradle.api.tasks.PathSensitive;
-import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
-import net.galacticraft.changelog.util.ChangelogUtils;
+import net.galacticraft.changelog.git.CommitParser;
+import net.galacticraft.changelog.markdown.MarkdownFile;
 import net.galacticraft.changelog.util.Utils;
+import net.galacticraft.gradle.core.version.Version;
 
 public abstract class GenerateChangelogTask extends DefaultTask
 {
@@ -50,51 +46,45 @@ public abstract class GenerateChangelogTask extends DefaultTask
     public GenerateChangelogTask()
     {
         super();
-
-        //Setup defaults: Using merge-base based text changelog generation of the local project into build/changelog.txt
-        getGitDirectory().convention(getProject().getLayout().getProjectDirectory().dir(".git"));
-        getBuildMarkdown().convention(true);
-        getOutputFile().convention(getProject().getLayout().getBuildDirectory().file("changelog.md"));
         getProjectUrl().convention(Utils.buildProjectUrl(getProject()));
+        getProjectVersion().convention(String.valueOf(getProject().getVersion()));
     }
-
-    @InputDirectory
-    @PathSensitive(PathSensitivity.NONE)
-    public abstract DirectoryProperty getGitDirectory();
-
+    
     @Input
-    public abstract Property<Boolean> getBuildMarkdown();
-
-    @OutputFile
-    public abstract RegularFileProperty getOutputFile();
+    public abstract Property<String> getProjectVersion();
 
     @Input
     public abstract Property<String> getProjectUrl();
 
     @TaskAction
-    public void generate() {        
-        final String tag = this.getProject().getExtensions().getByType(ChangelogExtension.class).getTag().get();
+    public void generate()
+    {
+        ChangelogExtension extension = this.getProject().getExtensions().getByType(ChangelogExtension.class);
+        CommitParser commitParser = new CommitParser(extension);
+
+        Version projectVersion = Version.of(getProjectVersion().get());
         
-        if(tag.isEmpty()) {
-            throw new IllegalStateException("tag is not supplied to the task: " + getName());
-        }
+        MarkdownFile mkFile;
+        
+        if(commitParser.getGit().getTagVersionSet(false).contains(projectVersion))
+            mkFile = new MarkdownFile(commitParser, projectVersion);
+        else
+            mkFile = new MarkdownFile(commitParser);
 
-        String changelog = "";
-        changelog = ChangelogUtils.generateChangelog(getProject(), getProjectUrl().get(), !getBuildMarkdown().get(), tag);
+        if (extension.getDebugMode().get()) {
+            System.out.println(mkFile.getChangelog());
+        } else {
+            final File outputFile = extension.getChangelogFile().getAsFile().get();
+            outputFile.getParentFile().mkdirs();
+            if (outputFile.exists()) {
+                outputFile.delete();
+            }
 
-        final File outputFile = getOutputFile().getAsFile().get();
-        outputFile.getParentFile().mkdirs();
-        if (outputFile.exists()) {
-            outputFile.delete();
-        }
-
-        try
-        {
-            Files.write(outputFile.toPath(), changelog.getBytes(StandardCharsets.UTF_8));
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("Failed to write changelog to file: " + outputFile.getAbsolutePath());
+            try {
+                Files.write(outputFile.toPath(), mkFile.getChangelog().getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to write changelog to file: " + outputFile.getAbsolutePath());
+            }
         }
     }
 }

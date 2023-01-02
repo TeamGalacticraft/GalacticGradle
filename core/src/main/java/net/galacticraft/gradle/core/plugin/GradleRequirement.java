@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
+import org.gradle.api.Project;
 import org.gradle.util.GradleVersion;
 
 public class GradleRequirement
@@ -45,6 +46,22 @@ public class GradleRequirement
 				throw new GradleException("Your Gradle version is too old to apply the plugin from " + plugin.getClass().getName() + " to " + targetDisplayName + "\n"
 					+ "    Minimum: " + minimum + "\n" + "    Current: " + current + "\n");
 			}
+		}
+	}
+
+	static void safeAfterEval(final @Nullable Project target, Runnable afterEvaluate)
+	{
+		if (target != null)
+		{
+			target.afterEvaluate(p ->
+			{
+				if (p.getState().getFailure() != null)
+				{
+					return;
+				}
+
+				afterEvaluate.run();
+			});
 		}
 	}
 }

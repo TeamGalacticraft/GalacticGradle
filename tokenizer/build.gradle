@@ -1,0 +1,47 @@
+version = '1.0.0'
+
+dependencies {
+	suite(libs.galactic.core) { changing = true }
+	implementation libs.guava
+
+	testImplementation project(":testing")
+}
+
+jar {
+	manifest(setMainManifestProps)
+}
+
+gradlePlugin {
+	plugins {
+		tokenizer {
+			id = 'net.galacticraft.tokenizer'
+			displayName = 'A universal plugin to replace token variables in java sources'
+			description = 'A universal plugin to replace token variables in java sources'
+			implementationClass = 'net.galacticraft.token.TokenizerPlugin'
+		}
+		tokenizerOld {
+			id = 'net.galacticraft.token'
+			implementationClass = 'net.galacticraft.token.TokenizerPlugin'
+		}
+	}
+}
+
+pluginBundle {
+    website = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    tags = ['tokens', 'replacer']
+}
+
+publishing {
+	publications {
+		pluginMaven(MavenPublication) {
+			pom.withXml {
+				def reposNode = asNode().appendNode('repositories')
+				def repoNode = reposNode.appendNode('repository')
+				repoNode.appendNode('id', 'gradle-plugins')
+				repoNode.appendNode('name', 'Gradle Plugins')
+				repoNode.appendNode('url', 'https://maven.galacticraft.net/repository/gradle/')
+			}
+		}
+	}
+}

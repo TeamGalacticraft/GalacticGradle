@@ -31,22 +31,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import net.galacticraft.gradle.core.project.GalacticProject;
 import net.galacticraft.gradle.core.util.Checks;
 import net.galacticraft.gradle.core.util.MavenDependency;
 import net.galacticraft.gradle.core.version.Version;
+import net.galacticraft.gradle.core.version.Versions;
+import net.galacticraft.gradle.core.version.list.VersionSet;
 import net.galacticraft.gradle.core.xml.metadata.Metadata;
 import net.galacticraft.gradle.core.xml.model.Dependency;
 import net.galacticraft.gradle.core.xml.model.Model;
 
 public class MavenModel extends MavenModelBase
 {
-	private Version version;
-
-	public MavenModel(GalacticProject project)
-	{
-		super(project);
-	}
+	private Version				version;
+	private Optional<Metadata>	metadata;
+	private Optional<Model>		pom;
 
 	public void setVersion(Version version)
 	{
@@ -63,69 +61,66 @@ public class MavenModel extends MavenModelBase
 		return this.version;
 	}
 
+	private Optional<Metadata> metadata()
+	{
+		if (this.metadata == null)
+		{
+			this.metadata = this.getMetadata();
+		}
+		return this.metadata;
+	}
+
+	private Optional<Model> pom(Version version)
+	{
+		if (this.pom == null)
+		{
+			if (version.isSnapshotVersion())
+			{
+				this.pom = this.getSnapshotPom(project.getId(), version);
+			} else
+			{
+				this.pom = this.getPom(project.getId(), version);
+			}
+		}
+		return this.pom;
+	}
+
 	public List<MavenDependency> getDependencies()
 	{
 		Checks.notNull(version, "[getDependencies()] No Version set for " + project.getId());
-		Optional<Model> pom = null;
-
-		if (version.isSnapshotVersion())
-		{
-			pom = this.getSnapshotPom(project.getId(), version);
-		} else
-		{
-			pom = this.getPom(project.getId(), version);
-		}
+		Optional<Model> pom = pom(version);
 
 		List<MavenDependency> mavenDependencies = new ArrayList<>();
-		if (pom.isPresent()) {
+		if (pom.isPresent())
+		{
 			List<Dependency> dependencies = pom.get().getDependencies();
 			mavenDependencies.addAll(dependencies.stream().map(MavenDependency::from).collect(Collectors.toList()));
 			return mavenDependencies;
 		}
-			
-		return Collections.emptyList();
-	}
 
-	public Version readLatestVersion()
-	{
-		Optional<Metadata> metadata = this.getMetadata();
-		if (metadata.isPresent())
-			return Version.of(metadata.get().getVersioning().getLatest());
-		return Version.Null();
+		return Collections.emptyList();
 	}
 
 	public Version readLatestSnapshot()
 	{
-		Optional<Metadata> metadata = this.getMetadata();
-		if (metadata.isPresent())
-		{
-			Version version = Version.of(metadata.get().getVersioning().getLatest());
-			if (version.isSnapshotVersion())
-				return Version.of(metadata.get().getVersioning().getLatest());
-		}
-		return Version.Null();
+		return readVersions().extractSnapshots().latest();
 	}
 
 	public Version readLatestRelease()
 	{
-		Optional<Metadata> metadata = this.getMetadata();
+		Optional<Metadata> metadata = metadata();
 		if (metadata.isPresent())
 			return Version.of(metadata.get().getVersioning().getRelease());
 		return Version.Null();
 	}
 
-	public List<Version> readVersions()
+	public VersionSet readVersions()
 	{
-		List<Version>		versions	= new ArrayList<>();
-		Optional<Metadata>	metadata	= this.getMetadata();
+		Optional<Metadata> metadata = metadata();
 		if (metadata.isPresent())
 		{
-			for (String version : metadata.get().getVersioning().getVersions())
-			{
-				versions.add(Version.of(version));
-			}
-			return versions;
+			return metadata.get().getVersioning().getVersionSet();
 		}
-		return Collections.emptyList();
+		return Versions.empty();
 	}
 }

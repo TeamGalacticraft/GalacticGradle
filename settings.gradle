@@ -1,15 +1,49 @@
 pluginManagement {
     repositories {
-		mavenLocal()
-		maven {
-			url = 'https://repo.galacticraft.net/repository/common-proxy/'
-		}
-		maven {
-			url = 'https://repo.galacticraft.net/repository/maven-common/'
-		}
+		maven { url = 'https://maven.galacticraft.net/repository/gradle/' }
     }
+}
+
+dependencyResolutionManagement {
+	repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+	repositories {
+		maven { 
+			url 'https://maven.galacticraft.net/repository/maven-public/' 
+		}
+		maven {
+			url = "https://maven.galacticraft.net/repository/gradle/"
+			content {
+				includeGroupByRegex 'net.galacticraft.*'
+				includeGroupByRegex 'net.minecraftforge.*'
+				includeGroupByRegex 'com.modrinth.*'
+				includeGroup 'wtf.gofancy.fancygradle'
+				includeGroup 'net.darkhax.curseforgegradle'
+			}
+		}
+		maven {
+			url = 'https://maven.minecraftforge.net'
+			content { includeGroup 'net.minecraftforge.gradle' }
+		}
+		maven { 
+			url = 'https://jitpack.io'
+			content { includeGroup 'com.github.Exploding-Creeper' }
+		}
+	}
 }
 
 rootProject.name = "GalacticGradle"
 
-include 'core', 'testing', 'addon', 'curseforge', 'modrinth', 'addonpublish', 'changelog', 'publishing', 'maven', 'legacy-artifacts'
+[
+	"core",
+	"testing",
+	"addon",
+	"publish-curseforge",
+	"publish-modrinth",
+	"publish", 
+	"changelog",
+	"internal-maven",
+	"internal-legacy",
+	"tokenizer"
+  ].each {
+	include(it)
+  }

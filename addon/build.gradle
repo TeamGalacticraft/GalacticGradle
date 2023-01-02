@@ -1,64 +1,24 @@
-plugins {
-	id "org.shipkit.shipkit-changelog"
-	id "com.adarshr.test-logger"
-	id "java-gradle-plugin"
-	id "com.gradle.plugin-publish"
-}
-
-group = "net.galacticraft.addon"
-version = '1.0.0'
-
-repositories {
-	mavenCentral()
-	maven {
-		url = "https://maven.galacticraft.net/repository/gradle/"
-		content {
-			includeGroup 'net.galacticraft.gradle'
-		}
-	}
-	maven {
-		url = "https://maven.galacticraft.net/repository/legacy-common/"
-		content {
-			includeGroup 'wtf.gofancy'
-		}
-	}
-	maven { url = 'https://maven.minecraftforge.net' }
-}
+version = '1.0.8'
 
 dependencies {
-	implementation 'net.galacticraft.gradle:core:1.0.0'
-	compileOnlyApi 'com.google.guava:guava:31.0.1-jre'
-	common 'net.minecraftforge.gradle:ForgeGradle:[5.1,)'
-	common 'wtf.gofancy:FancyGradle:1.1.2-3'
+	includedSuite(libs.galactic.core) { changing = true }
+	includedSuite libs.forge.gradle
+	includedSuite libs.fancy.gradle
 
 	testImplementation project(":testing")
 }
 
 jar {
-	from(configurations.common.collect { it.isDirectory() ? it : zipTree(it) }) {
-		exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA",
-				"META-INF/LICENSE*", "META-INF/DEPENDENCIES", "META-INF/NOTICE*",
-				"META-INF/versions/9/module-info.class", "META-INF/maven/**"
+	from(configurations.includedSuite.collect { it.isDirectory() ? it : zipTree(it) }) {
+		exclude excludeGroup
 	}
+
 	manifest(setMainManifestProps)
 	duplicatesStrategy 'exclude'
 }
 
-model {
-	publishing {
-		publications {
-			pluginMaven {
-				pom.withXml {
-					def reposNode = asNode().appendNode('repositories')
-					def repoNode = reposNode.appendNode('repository')
-				
-					repoNode.appendNode('id', 'gc-core')
-					repoNode.appendNode('name', 'GCCore')
-					repoNode.appendNode('url', 'https://maven.galacticraft.net/repository/gradle/')
-				}
-			}
-		}
-	}
+tasks.withType(GenerateModuleMetadata) {
+	enabled = false
 }
 
 gradlePlugin {

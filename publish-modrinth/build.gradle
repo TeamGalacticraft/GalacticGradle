@@ -1,0 +1,46 @@
+version = '1.0.0.1'
+group = "net.galacticraft.publish"
+
+dependencies {
+	includedSuite(libs.galactic.core) { changing = true }
+	includedSuite libs.minotaur       
+
+	implementation libs.httpmime
+	implementation libs.httpclient
+	implementation libs.gson
+	implementation libs.guava
+	
+	testImplementation project(":testing")
+}
+
+gradlePlugin {
+    plugins {
+		modrinthPlugin {
+			id = 'net.galacticraft.publish.modrinth'
+			displayName = 'Galacticraft Modrinth Publishing'
+			description = 'Plugin for publishing mod artifacts to the Modrinth Platform'
+			implementationClass = 'net.galacticraft.publish.modrinth.ModrinthPublishPlugin'
+		}
+    }
+}
+
+jar {
+	from(configurations.includedSuite.collect { it.isDirectory() ? it : zipTree(it) }) {
+		exclude excludeGroup
+	}
+	manifest(setMainManifestProps)
+}
+
+pluginBundle {
+    website = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    tags = ['galacticraft', 'modrinth', 'mod-publishing', 'modrinth-publishing']
+}
+
+publishing {
+	publications {
+		pluginMaven(MavenPublication) {
+			artifactId = 'modrinth'
+		}
+	}
+}

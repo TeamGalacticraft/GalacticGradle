@@ -30,13 +30,17 @@ import static java.util.Objects.requireNonNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.gradle.api.Action;
+import org.gradle.internal.metaobject.ConfigureDelegate;
+import org.gradle.util.internal.ClosureBackedAction;
 
-public final class Configurable
+import groovy.lang.Closure;
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
+public class Configurable
 {
-	private Configurable()
-	{
-	}
 
 	/**
 	 * Apply a configuration action to an instance and return it.
@@ -79,5 +83,30 @@ public final class Configurable
 			configureAction.execute(instance);
 		}
 		return instance;
+	}
+
+	/**
+	 * Called from an object's {@link Configurable#configure} method.
+	 */
+	public static <T> T configureSelf(@Nullable Closure<?> configureClosure, T target)
+	{
+		if (configureClosure == null)
+		{
+			return target;
+		}
+
+		configureTarget(configureClosure, target, new ConfigureDelegate(configureClosure, target));
+		return target;
+	}
+
+	private static <T> void configureTarget(Closure<?> configureClosure, T target, ConfigureDelegate closureDelegate)
+	{
+		if (!(configureClosure instanceof GeneratedClosure))
+		{
+			new ClosureBackedAction<T>(configureClosure, Closure.DELEGATE_FIRST, false).execute(target);
+			return;
+		}
+		Closure<?> withNewOwner = configureClosure.rehydrate(target, closureDelegate, configureClosure.getThisObject());
+		new ClosureBackedAction<T>(withNewOwner, Closure.OWNER_ONLY, false).execute(target);
 	}
 }

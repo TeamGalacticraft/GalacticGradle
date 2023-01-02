@@ -25,81 +25,75 @@
 
 package net.galacticraft.changelog;
 
+import java.util.Arrays;
+
 import javax.inject.Inject;
 
 import org.gradle.api.Project;
+import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 
 import lombok.Getter;
 
-// TODO: Auto-generated Javadoc
-/**
- * Gets the commit.
- *
- * @return the commit
- */
 @Getter
 public class ChangelogExtension
 {
 
     private final Project project;
-    
-    private final Property<Boolean> debugMode;
-    
-    private final Property<Boolean> registerAllPublications;
-    
-    private final Property<String> tag;
-    
-    private final Property<String> commit;
 
-    /**
-     * Instantiates a new changelog extension.
-     *
-     * @param project the project
-     */
+    private final Property<Boolean> debugMode;
+
+    private final Property<String> tag;
+
+    private Property<Boolean> ignoreScopes;
+
+    private final ListProperty<String> addedTypes;
+
+    private final ListProperty<String> commitTypes;
+    
+    private final RegularFileProperty changelogFile;
+
     @Inject
     public ChangelogExtension(final Project project)
     {
+        final ObjectFactory factory = project.getObjects();
         this.project = project;
-        
-        this.debugMode = project.getObjects().property(Boolean.class).convention(false);
-        this.registerAllPublications = project.getObjects().property(Boolean.class).convention(false);
-        
-        this.tag = project.getObjects().property(String.class);
-        this.commit = project.getObjects().property(String.class);
-    }
-
-    /**
-     * Debug mode.
-     */
-    public void debugMode()
-    {
-        this.debugMode.set(true);;
+        this.debugMode = factory.property(Boolean.class).convention(false);
+        this.tag = factory.property(String.class);
+        this.ignoreScopes = factory.property(Boolean.class).convention(false);
+        this.commitTypes = factory.listProperty(String.class)
+            .convention(Arrays.asList("feat", "fix", "perf", "refactor", "revert", "docs", "style"));
+        this.addedTypes = factory.listProperty(String.class).empty();
+        this.changelogFile = factory.fileProperty().convention(project.getLayout().getBuildDirectory().file("changelog.md"));
     }
     
-    /**
-     * Register all publications.
-     */
-    public void registerAllPublications()
+    public void outputFile(String path)
     {
-        this.registerAllPublications.set(true);;
+        this.changelogFile.set(this.project.file(path));
     }
 
-    /**
-     * In debug mode.
-     *
-     * @return true, if successful
-     */
-    public boolean inDebugMode()
+    public void debug()
     {
-        return this.debugMode.get();
+        this.debugMode.set(true);
     }
 
-    /**
-     * From tag.
-     *
-     * @param tag the tag
-     */
+    public void ignoreScopes()
+    {
+        this.ignoreScopes.set(true);
+    }
+
+    public void types(final String... types)
+    {
+        this.commitTypes.empty().addAll(types);
+    }
+
+    public void addTypes(final String... types)
+    {
+        this.addedTypes.addAll(types);
+    }
+
     public void fromTag(final String tag)
     {
         this.tag.set(tag);

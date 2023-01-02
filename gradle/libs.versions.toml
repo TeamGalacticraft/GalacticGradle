@@ -1,0 +1,80 @@
+[metadata]
+version = "1.0"
+
+[versions]
+
+test-logger = 		"3.2.0"
+licenser = 			"0.6.1"
+
+lombok = 			"1.18.24"
+assertj = 			"3.23.1"
+guava = 			"31.0.1-jre"
+junit = 			"5.9.1"
+jgit = 				"5.13.1.202206130422-r"
+gson =				"2.9.1"
+trove4j =			"3.0.3"
+maven =				"3.8.6"
+minotaur =			"2.4.5"
+okhttp =			"3.14.9"
+mockito = 			"4.8.0"
+
+plugin-publish = 	"1.1.0"
+annotations = 		"23.0.0"
+logInterceptor =	"3.14.9"
+markdowngenerator = "1.3.1.1"
+httpcomponents = 	"4.5.13"
+checkerframework = 	"3.28.0"
+cursegradle = 		"1.0.11"
+
+galactic-core =		"1.0.0-8"
+galactic-maven = 	"1.0.0"
+mammoth-test = 		"1.3.0"
+forge-gradle = 		"5.1.58"
+fancy-gradle = 		"1.1.2-3"
+commons-text =		"1.10.0"
+groovy-all =		"3.0.2"
+plexus-utils = 		"3.4.2"
+
+missing-metadata-guava =	"31.1.1"
+
+[libraries]
+jgit = 		{ module = "org.eclipse.jgit:org.eclipse.jgit", 	version.ref = "jgit" 		 }
+guava = 	{ module = "com.google.guava:guava", 				version.ref = "guava" 		 }
+gson = 		{ module = "com.google.code.gson:gson", 			version.ref = "gson" 		 }
+mammoth = 	{ module = "net.galacticraft.gradle:core", 			version.ref = "mammoth-test" }
+groovy =	{ module = "org.codehaus.groovy:groovy-all", 		version.ref = "groovy-all" 	 }
+okhttp =	{ module = "com.squareup.okhttp3:okhttp", 			version.ref = "okhttp" 		 }
+trove4j =	{ module = "net.sf.trove4j:trove4j", 				version.ref = "trove4j" 	 }
+minotaur =	{ module = "com.modrinth.minotaur:Minotaur", 		version.ref = "minotaur"	 }
+assertj =	{ module = "org.assertj:assertj-core", 				version.ref = "assertj"	 	 }
+mockito =	{ module = "org.mockito:mockito-core", 				version.ref = "mockito"	 	 }
+lombok = 	{ module = "org.projectlombok:lombok", 				version.ref = "lombok"	 	 }
+
+markdowngen = 	{ module = "net.steppschuh.markdowngenerator:markdowngenerator", 	version.ref = "markdowngenerator" }
+annotations = 	{ module = "org.jetbrains:annotations", 							version.ref = "annotations" 	  }
+httpmime = 		{ module = "org.apache.httpcomponents:httpmime", 					version.ref = "httpcomponents" 	  }
+httpclient = 	{ module = "org.apache.httpcomponents:httpclient", 					version.ref = "httpcomponents" 	  }
+cursegradle =   { module = "net.darkhax.curseforgegradle:CurseForgeGradle", 		version.ref = "cursegradle" 	  }
+
+checkerframework = 	{ module = "org.checkerframework:checker",	version.ref = "checkerframework" 	}
+
+junit-api = 		{ module = "org.junit.jupiter:junit-jupiter-api", 		version.ref = "junit" 			}
+junit-params = 		{ module = "org.junit.jupiter:junit-jupiter-params", 	version.ref = "junit" 			}
+junit-engine = 		{ module = "org.junit.jupiter:junit-jupiter-engine", 	version.ref = "junit" 			}
+commons-text = 		{ module = "org.apache.commons:commons-text", 			version.ref = "commons-text" 	}
+galactic-core = 	{ module = "net.galacticraft.gradle:core", 				version.ref = "galactic-core" 	}
+galactic-maven =	{ module = "net.galacticraft.internal:maven", 			version.ref = "galactic-maven" 	}
+forge-gradle =		{ module = "net.minecraftforge.gradle:ForgeGradle", 	version.ref = "forge-gradle" 	}
+maven-model =		{ module = "org.apache.maven:maven-model", 				version.ref = "maven" 			}
+plexus-utils = 		{ module = "org.codehaus.plexus:plexus-utils", 			version.ref = "plexus-utils" 	}
+
+logging-interceptor =		{ module = "com.squareup.okhttp3:logging-interceptor", 		version.ref = "okhttp" 			  		}
+maven-repository-metadata =	{ module = "org.apache.maven:maven-repository-metadata", 	version.ref = "maven" 					}
+missing-metadata-guava = 	{ module = "de.jjohannes.gradle:missing-metadata-guava", 	version.ref = "missing-metadata-guava"  }
+
+fancy-gradle = 	{ module = "wtf.gofancy.fancygradle:wtf.gofancy.fancygradle.gradle.plugin", version.ref = "fancy-gradle" }
+
+[plugins]
+publish = 		{ id = "com.gradle.plugin-publish", 	version.ref = "plugin-publish" 	}
+licenser = 		{ id = "org.cadixdev.licenser", 		version.ref = "licenser" 		}
+test-logger = 	{ id = "com.adarshr.test-logger", 		version.ref = "test-logger" 	}

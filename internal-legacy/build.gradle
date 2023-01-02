@@ -1,0 +1,55 @@
+version = '1.0.0'
+group = "net.galacticraft.internal"
+
+dependencies {
+	suite(libs.galactic.core) { changing = true }
+	implementation libs.galactic.maven
+	implementation libs.forge.gradle
+	implementation libs.fancy.gradle
+}
+
+
+
+jar {
+	manifest(setMainManifestProps)
+	duplicatesStrategy 'exclude'
+}
+
+gradlePlugin {
+    plugins {
+		legacy {
+			id = 'net.galacticraft.internal.legacy'
+			implementationClass = 'net.galacticraft.internal.legacy.LegacyDefaultsPlugin'
+		}
+		legacyDepreciated {
+			id = 'net.galacticraft.internal.legacy.defaults'
+			implementationClass = 'net.galacticraft.internal.legacy.LegacyDefaultsPlugin'
+		}
+    }
+}
+
+publishing {
+	publications {
+		pluginMaven(MavenPublication) {
+			artifactId = 'legacy'
+			
+			pom.withXml {
+				def reposNode = asNode().appendNode('repositories')
+				def repoNode = reposNode.appendNode('repository')
+				repoNode.appendNode('id', 'gradle-plugins')
+				repoNode.appendNode('name', 'Gradle Plugins')
+				repoNode.appendNode('url', 'https://maven.galacticraft.net/repository/gradle/')
+			}
+		}
+	}
+	repositories {
+		maven {
+			name 'GCGradlePlugins'
+			url 'https://maven.galacticraft.net/repository/gradle-plugins/'
+			credentials {
+				username = project.hasProperty('NEXUS_USERNAME') ? project.NEXUS_USERNAME : ''
+				password = project.hasProperty('NEXUS_PASSWORD') ? project.NEXUS_PASSWORD : ''
+			}
+		}
+	}
+}

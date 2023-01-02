@@ -28,26 +28,35 @@ package net.galacticraft.changelog;
 import org.gradle.api.Project;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.plugins.PluginManager;
-import org.gradle.api.tasks.TaskContainer;
 import org.jetbrains.annotations.NotNull;
 
 import net.galacticraft.gradle.core.plugin.GradlePlugin;
+import net.galacticraft.gradle.core.plugin.TeamConstants;
 
 public class ChangelogPlugin extends GradlePlugin
 {
 
-    public static final String CHANGELOG_EXTENSION_NAME     = "changelog";
-    public static final String GENERATE_CHANGELOG_TASK_NAME = "createChangelog";
+	public static final String GENERATE_CHANGELOG_TASK_NAME = "createChangelog";
 
 	@Override
-	protected void applyToProject(@NotNull Project target, @NotNull PluginManager plugins, @NotNull TaskContainer tasks)
+	protected void applyToProject(@NotNull Project target, @NotNull PluginManager plugins)
 	{
-        extensions.findOrCreate(ChangelogPlugin.CHANGELOG_EXTENSION_NAME, ChangelogExtension.class, target);
+	    ChangelogExtension ext = extensions.findOrCreate("changelog", ChangelogExtension.class, target);
 
-        tasks.register(ChangelogPlugin.GENERATE_CHANGELOG_TASK_NAME, GenerateChangelogTask.class, a ->
-        {
-            a.setGroup("galactic-gradle");
-        });
+		tasks.registerTask(ChangelogPlugin.GENERATE_CHANGELOG_TASK_NAME, GenerateChangelogTask.class, a ->
+		{
+			a.setGroup(TeamConstants.Properties.TASK_GROUP_NAME);
+		});
+		
+		afterEval(project -> {
+		    if (!ext.getAddedTypes().get().isEmpty())
+		    {
+		        for(String added : ext.getAddedTypes().get())
+		        {
+		            ext.getCommitTypes().add(added);
+		        }
+		    }
+		});
 	}
 
 	@Override

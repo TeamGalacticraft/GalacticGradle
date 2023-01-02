@@ -29,8 +29,8 @@ import java.util.Comparator;
 
 import net.galacticraft.gradle.core.version.expr.Expression;
 import net.galacticraft.gradle.core.version.expr.ExpressionParser;
-import net.galacticraft.gradle.core.version.expr.LexerException;
 import net.galacticraft.gradle.core.version.expr.ExpressionParser.UnexpectedTokenException;
+import net.galacticraft.gradle.core.version.expr.LexerException;
 
 /**
  * This class implements the Facade design pattern.
@@ -329,7 +329,7 @@ public class Version implements Comparable<Version>
 	{
 		return VersionParser.parseValidSemVer(version);
 	}
-
+	
 	/**
 	 * Creates a new instance of {@code Version}
 	 * for the specified version numbers.
@@ -903,5 +903,15 @@ public class Version implements Comparable<Version>
 	public boolean isStable()
 	{
 		return (this.getMajorVersion() != null && this.getMajorVersion() > 0) && (this.preRelease.toString().isEmpty());
+	}
+	
+	public static class VersionComparator implements Comparator<Version>
+	{
+		@Override
+		public int compare(Version o1, Version o2)
+		{
+			
+			return o1.compareTo(o2);
+		}
 	}
 }

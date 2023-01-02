@@ -28,12 +28,11 @@ package net.galacticraft.gradle.core.project;
 import net.galacticraft.gradle.core.model.maven.MavenModel;
 import net.galacticraft.gradle.core.util.Checks;
 
-public class GalacticProject
+public class GalacticProject extends MavenModel
 {
 	private String		group		= "dev.galacticraft";
 	private String		groupPath	= "dev/galacticraft/";
 	private String		artifactId;
-	private MavenModel	mavenModel;
 
 	public static GalacticProject create(String artifactId)
 	{
@@ -43,23 +42,18 @@ public class GalacticProject
 	private GalacticProject(String artifactId)
 	{
 		this.artifactId = artifactId;
-		this.mavenModel = new MavenModel(this);
-	}
-
-	public MavenModel getMavenModel()
-	{
-		return this.mavenModel;
+		setProject(this);
 	}
 
 	public String toDependencyNotation()
 	{
-		Checks.notNull(mavenModel.getVersion(), "No Version has been set for GalacticProject with id: " + artifactId);
-		return toDependencyNotation(mavenModel.getVersion().toString());
+		Checks.notNull(getVersion(), "No Version has been set for GalacticProject with id: " + artifactId);
+		return toDependencyNotation(getVersion().toString());
 	}
 
 	public String toDependencyNotation(String version)
 	{
-		this.mavenModel.setVersion(version);
+		this.setVersion(version);
 		return this.group + ":" + this.artifactId + ":" + version;
 	}
 

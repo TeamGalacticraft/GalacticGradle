@@ -1,11 +1,5 @@
-pluginManagement {
-    repositories {
-        mavenLocal()
-    }
-}
-
 plugins {
-	id "net.galacticraft.addon"
+	id "net.galacticraft.addon" version "1.0.7"
 }
 
 rootProject.name = 'releaseVersion'

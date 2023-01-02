@@ -1,0 +1,41 @@
+pluginManager.withPlugin("jacoco") {
+	
+	jacoco {
+		toolVersion = "0.8.8"
+	}
+	
+	jacocoTestReport {
+		reports {
+			html {
+				enabled true
+				destination file('build/reports/jacoco/html')
+			}
+			
+			xml {
+				enabled true
+				destination file('build/reports/jacoco/html/report.xml')
+			}
+			
+			csv.enabled false
+		}
+		
+		afterEvaluate {
+			getClassDirectories().setFrom(
+				files(
+					classDirectories.files.collect {
+						fileTree(
+							dir: it,
+							excludes: []
+						)
+					})
+			)
+		}
+	}
+	
+	jacocoTestReport.dependsOn("test")
+	
+	test {
+		useJUnitPlatform()
+		finalizedBy jacocoTestReport
+	}
+}

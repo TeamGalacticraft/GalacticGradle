@@ -1,0 +1,45 @@
+version = '1.0.0'
+group = "net.galacticraft.publish"
+
+dependencies {
+	includedSuite(libs.galactic.core) { changing = true }
+	
+	implementation project(":publish-curseforge")
+	implementation project(":publish-modrinth")
+	implementation libs.minotaur
+	
+	testImplementation project(":testing")
+}
+
+jar {
+	from(configurations.includedSuite.collect { it.isDirectory() ? it : zipTree(it) }) {
+		exclude excludeGroup
+	}
+
+	manifest(setMainManifestProps)
+}
+
+gradlePlugin {
+	plugins {
+		publishing {
+			id = 'net.galacticraft.publish-all'
+			displayName = 'Galacticraft Publishing'
+			description = 'Applies both the CurseForge & Modrinth Publishing plugins'
+			implementationClass = 'net.galacticraft.publish.ModPublishingPlugin'
+		}
+	}
+}
+
+pluginBundle {
+	website = 'https://github.com/TeamGalacticraft/GalacticGradle/blob/master/publishing/README.md'
+	vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+	tags = ['galacticraft', 'galactic-gradle', 'mod-publishing', 'modrinth', 'curseforge']
+}
+
+publishing {
+	publications {
+		pluginMaven(MavenPublication) {
+			artifactId = 'publish-all'
+		}
+	}
+}

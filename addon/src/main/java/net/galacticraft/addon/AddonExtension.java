@@ -44,7 +44,7 @@ public class AddonExtension
 	@Inject
 	public AddonExtension(final ObjectFactory factory)
 	{
-		this.version = factory.property(String.class).convention(EMPTY_VERSION);
+		this.version = factory.property(String.class);
 		this.useLatestSnapshot = factory.property(Boolean.class).convention(false);
 		this.useLatestRelease = factory.property(Boolean.class).convention(false);
 	}

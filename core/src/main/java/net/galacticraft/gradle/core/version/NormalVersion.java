@@ -25,6 +25,11 @@
 
 package net.galacticraft.gradle.core.version;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * The {@code NormalVersion} class represents the version core.
  *
@@ -142,6 +147,8 @@ class NormalVersion implements Comparable<NormalVersion>
 	 */
 	private final Integer patch;
 
+	private final List<Integer> remaining = new LinkedList<>();
+
 	/**
 	 * Constructs a {@code NormalVersion} with the
 	 * major, minor and patch version numbers.
@@ -165,6 +172,12 @@ class NormalVersion implements Comparable<NormalVersion>
 		this.major = major;
 		this.minor = minor;
 		this.patch = patch;
+	}
+
+	NormalVersion addRemainingIntegers(Integer... integers)
+	{
+		this.remaining.addAll(Arrays.asList(integers));
+		return this;
 	}
 
 	/**
@@ -227,6 +240,11 @@ class NormalVersion implements Comparable<NormalVersion>
 		return new NormalVersion(major, minor, patch + 1);
 	}
 
+	int getRemainingTotal()
+	{
+		return remaining.stream().mapToInt(Integer::valueOf).sum();
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -240,6 +258,10 @@ class NormalVersion implements Comparable<NormalVersion>
 			if (result == 0)
 			{
 				result = patch - other.patch;
+				if(result == 0)
+				{
+					result = getRemainingTotal() - other.getRemainingTotal();
+				}
 			}
 		}
 		return result;
@@ -272,6 +294,8 @@ class NormalVersion implements Comparable<NormalVersion>
 		hash = 31 * hash + major;
 		hash = 31 * hash + minor;
 		hash = 31 * hash + patch;
+		for(int i : remaining)
+			hash = 31 * hash + i;
 		return hash;
 	}
 
@@ -287,6 +311,9 @@ class NormalVersion implements Comparable<NormalVersion>
 	@Override
 	public String toString()
 	{
-		return String.format("%d.%d.%d", major, minor, patch);
+		if (remaining.isEmpty())
+			return String.format("%d.%d.%d", major, minor, patch);
+		else
+			return String.format("%d.%d.%d.%s", major, minor, patch, String.join(".", remaining.stream().map(String::valueOf).collect(Collectors.toList())));
 	}
 }

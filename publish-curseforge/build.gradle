@@ -1,0 +1,49 @@
+version = '1.0.1'
+group = "net.galacticraft.publish"
+
+dependencies {
+	includedSuite(libs.galactic.core) { changing = true }
+	implementation libs.cursegradle
+	implementation libs.guava
+	
+	testImplementation project(":testing")
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.deprecation = true
+    options.fork = true
+}
+
+gradlePlugin {
+    plugins {
+		curseforgePlugin {
+			id = 'net.galacticraft.publish.curseforge'
+			displayName = 'Galacticraft Curseforge Publishing'
+			description = 'Plugin for publishing mod artifacts to the Curseforge Platform'
+			implementationClass = 'net.galacticraft.curseforge.CursePublishPlugin'
+		}
+    }
+}
+
+jar {
+	from(configurations.includedSuite.collect { it.isDirectory() ? it : zipTree(it) }) {
+		exclude excludeGroup
+	}
+
+	manifest(setMainManifestProps)
+}
+
+pluginBundle {
+    website = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    vcsUrl = 'https://github.com/TeamGalacticraft/GalacticGradle'
+    tags = ['galacticraft', 'curseforge', 'publishing']
+}
+
+publishing {
+	publications {
+		pluginMaven(MavenPublication) {
+			artifactId = 'curseforge'
+		}
+	}
+}

@@ -194,7 +194,8 @@ class VersionParser implements Parser<Version> {
      * @throws UnexpectedCharacterException when encounters an unexpected character type
      */
     static Version parseValidSemVer(String version) {
-        VersionParser parser = new VersionParser(version);
+        String strippedVer = version.startsWith("v") ? version.substring(1) : version;
+        VersionParser parser = new VersionParser(strippedVer);
         return parser.parseValidSemVer();
     }
 
@@ -259,7 +260,7 @@ class VersionParser implements Parser<Version> {
         MetadataVersion preRelease = MetadataVersion.NULL;
         MetadataVersion build = MetadataVersion.NULL;
 
-        Character next = consumeNextCharacter(HYPHEN, PLUS, EOI);
+        Character next = consumeNextCharacter(DOT, HYPHEN, PLUS, EOI);
         if (HYPHEN.isMatchedBy(next)) {
             preRelease = parsePreRelease();
             next = consumeNextCharacter(PLUS, EOI);
@@ -268,6 +269,8 @@ class VersionParser implements Parser<Version> {
             }
         } else if (PLUS.isMatchedBy(next)) {
             build = parseBuild();
+        } else if (DOT.isMatchedBy(next)) {
+        	normal.addRemainingIntegers(Integer.parseInt(numericIdentifier()));
         }
         consumeNextCharacter(EOI);
         return new Version(normal, preRelease, build);
@@ -519,7 +522,7 @@ class VersionParser implements Parser<Version> {
             throw new UnexpectedCharacterException(e);
         }
     }
-
+    
     /**
      * Checks if the next character in the stream is valid.
      *

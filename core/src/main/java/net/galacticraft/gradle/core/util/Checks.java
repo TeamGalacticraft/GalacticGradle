@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.gradle.api.GradleException;
 
 public class Checks
@@ -108,7 +107,7 @@ public class Checks
 		}
 	}
 
-	public static <T extends @NonNull Collection<?>> T notNullOrEmpty(@Nullable T collection, @Nullable Object ifNullErrorMessage, @Nullable Object ifEmptyErrorMessage)
+	public static <T extends Collection<?>> T notNullOrEmpty(@Nullable T collection, @Nullable Object ifNullErrorMessage, @Nullable Object ifEmptyErrorMessage)
 	{
 		if (collection == null)
 		{
@@ -120,7 +119,7 @@ public class Checks
 		return collection;
 	}
 
-	public static <T extends @NonNull Collection<?>> T notNullOrEmpty(@Nullable T collection, @Nullable Object ifNullErrorMessage)
+	public static <T extends Collection<?>> T notNullOrEmpty(@Nullable T collection, @Nullable Object ifNullErrorMessage)
 	{
 		if (collection == null)
 		{
@@ -132,7 +131,7 @@ public class Checks
 		return collection;
 	}
 	
-	public static <T extends @NonNull Collection<?>> T notNullOrEmpty(@Nullable T collection)
+	public static <T extends Collection<?>> T notNullOrEmpty(@Nullable T collection)
 	{
 		if (collection == null)
 		{
@@ -144,7 +143,7 @@ public class Checks
 		return collection;
 	}
 	
-	public static <T extends @NonNull Object> T notNull(@Nullable T object, @Nullable Object errorMessage)
+	public static <T extends Object> T notNull(@Nullable T object, @Nullable Object errorMessage)
 	{
 		if (object == null)
 		{
@@ -153,7 +152,7 @@ public class Checks
 		return object;
 	}
 
-	public static <T extends @NonNull Object> boolean allNotNull(@Nullable Collection<T> objects)
+	public static <T extends Object> boolean allNotNull(@Nullable Collection<T> objects)
 	{
 		for(T obj : objects)
 		{
@@ -166,7 +165,7 @@ public class Checks
 		return true;
 	}
 	
-	public static <T extends @NonNull Object> T notNull(@Nullable T object)
+	public static <T extends Object> T notNull(@Nullable T object)
 	{
 		if (object == null)
 		{

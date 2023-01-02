@@ -29,32 +29,60 @@ import javax.annotation.Nullable;
 
 import org.gradle.api.Project;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 public class Variables
 {
-	private Project project;
-	
-	public Variables(Project project)
-	{
-		this.project = project;
-	}
+	private Project target;
 
-	public void setProject(Project project)
+	public Variables(Project target)
 	{
-		this.project = project;
+		this();
+		this.target = target;
+	}
+	
+	public Variables setProject(Project target)
+	{
+		this.target = target;
+		return this;
 	}
 
 	@Nullable
+	public final String get(final String name)
+	{
+		if (System.getenv(name) != null)
+		{
+			return System.getenv(name);
+		} else if (System.getProperty(name) != null)
+		{
+			return System.getProperty(name);
+		} else if (target.findProperty(name) != null)
+		{
+			return (String) target.findProperty(name);
+		} else
+		{
+			return null;
+		}
+	}
+	
+	public final boolean has(@Nullable String name)
+	{
+		if(name == null) 
+			return false;
+		if(target != null)
+			if(target.hasProperty(name))
+				return true;
+		if(System.getenv().keySet().contains(name) || System.getProperties().contains(name))
+			return true;
+		else
+			return false;
+	}
+	
+	@Nullable
+	@Deprecated
 	public final String getString(final String name)
 	{
-		if (this.project != null)
-			return project.hasProperty(name) ? (String) project.property(name) : envString(name);
-		else
-			return envString(name);
-	}
-
-	@Nullable
-	private String envString(final String name)
-	{
-		return System.getenv(name) != null ? System.getenv(name) : null;
+		return get(name);
 	}
 }

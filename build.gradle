@@ -1,62 +1,86 @@
+import org.gradle.plugins.ide.eclipse.model.AbstractLibrary
+import org.gradle.plugins.ide.eclipse.model.internal.FileReferenceFactory
+
 plugins {
-	id "org.shipkit.shipkit-changelog" version "1.1.15" apply false
-	id "com.gradle.plugin-publish" version "1.0.0" apply false
-	id "com.adarshr.test-logger" version "3.2.0" apply false
-	id 'org.cadixdev.licenser' version '0.7.0-SNAPSHOT' apply false
+	alias(libs.plugins.publish) apply false
+	alias(libs.plugins.test.logger) apply false
+	alias(libs.plugins.licenser) apply false
 }
 
 wrapper {
-	gradleVersion = '7.5.1'
+	gradleVersion = '7.6'
 	distributionType = Wrapper.DistributionType.ALL
 }
 
-apply from: 'shared.gradle'
-
 subprojects {
+	apply plugin: 'com.adarshr.test-logger'
 	apply plugin: 'org.cadixdev.licenser'
 	apply plugin: 'maven-publish'
 	apply plugin: 'java-library'
 	apply plugin: 'eclipse'
 	apply plugin: 'jacoco'
+	
+	if(project.name != "core" && project.name != "testing")
+	{
+		apply plugin: 'com.gradle.plugin-publish'
+		apply plugin: 'java-gradle-plugin'
+	}
+	
+	if(project.name != "core") {
+		tasks.withType(Javadoc).all { enabled = false }
+	}
 
-	java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+	
+	apply from: '../gradle/script.utils.gradle'
 
+	group = "net.galacticraft"
+	
+	java {
+	    toolchain {
+	        languageVersion = JavaLanguageVersion.of(8)
+	        vendor = JvmVendorSpec.ADOPTIUM
+	    }
+	}
+	
 	sourceSets {
 		test {
-			java.srcDirs("src/test/java")
-			resources.srcDirs("src/test/resources")
+			java.srcDirs('src/test/java')
+			resources.srcDirs('src/test/resources')
 		}
 	}
 	
 	configurations {
-		compileOnly.extendsFrom common
+		implementation.extendsFrom suite
+		compileOnly.extendsFrom includedSuite
 	}
 
-	repositories {
-		maven { url 'https://maven.galacticraft.net/repository/maven-public/' }
-		mavenLocal()
+	configurations.suite {
+		resolutionStrategy {
+			cacheChangingModulesFor 0, 'seconds'
+			cacheDynamicVersionsFor 0, 'seconds'
+		}
 	}
-
+	
 	dependencies {
-		implementation gradleApi()
+		compileOnly gradleApi()
 
-		compileOnly 'com.google.guava:guava:31.0.1-jre'
-		implementation "org.jetbrains:annotations:23.0.0"
-		implementation 'org.checkerframework:checker-qual:3.17.0'
-		compileOnly 'org.projectlombok:lombok:1.18.24'
-		annotationProcessor 'org.projectlombok:lombok:1.18.24'
-		testCompileOnly 'org.projectlombok:lombok:1.18.24'
-		testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+		implementation libs.annotations
+		
+		compileOnly libs.lombok
+		annotationProcessor libs.lombok
+		testCompileOnly libs.lombok
+		testAnnotationProcessor libs.lombok
 
-		testImplementation 'org.assertj:assertj-core:3.23.1'
-		testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
-		testImplementation 'org.junit.jupiter:junit-jupiter-params:5.9.1'
-		testImplementation 'org.mockito:mockito-core:4.8.0'
-		testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
+		testImplementation libs.assertj
+		testImplementation libs.junit.api
+		testImplementation libs.junit.params
+		testImplementation libs.mockito
+		testRuntimeOnly libs.junit.engine
 	}
 
 	license {
 		header = rootProject.file("HEADER.txt")
+		include '**/*.java'
 		properties {
 			name = "${projectName}"
 			organization = "${organization}"
@@ -64,25 +88,11 @@ subprojects {
 		}
 	}
 
-	tasks.withType(Javadoc) {
-		failOnError false
-	}
-
 	tasks.withType(Copy).all {
 		duplicatesStrategy 'exclude'
 	}
 	
-	jacocoTestReport{
-		reports {
-			xml.required = true
-		}
-		dependsOn test
-	}
-
-	test {
-		useJUnitPlatform()
-		finalizedBy jacocoTestReport
-	}
+	apply from: '../gradle/script.jacoco.gradle'
 
 	def srcFolder = file("C:\\gradle\\gradle-${project.gradle.gradleVersion}\\src")
 
@@ -93,11 +103,9 @@ subprojects {
 					String version = project.gradle.gradleVersion
 					String gradleSourceDirectory = srcFolder.getAbsolutePath()
 					classpath.entries.each { entry ->
-						if (entry in org.gradle.plugins.ide.eclipse.model.AbstractLibrary
-								&& entry.library.path.contains('generated-gradle-jars')) {
+						if (entry in AbstractLibrary && entry.library.path.contains('generated-gradle-jars')) {
 							entry.sourcePath =
-									new org.gradle.plugins.ide.eclipse.model.internal.FileReferenceFactory()
-									.fromPath(gradleSourceDirectory)
+									new FileReferenceFactory().fromPath(gradleSourceDirectory)
 						}
 					}
 				}
@@ -107,7 +115,36 @@ subprojects {
 
 	checkLicenseMain.dependsOn licenseFormat
 
+	tasks.named("build").configure {
+	    build {
+	        println "Building ${project.name} | Version: ${project.version}"
+	    }
+	}
+	
+	publishing {
+		repositories {
+			maven {
+				name 'GCGradlePlugins'
+				url 'https://maven.galacticraft.net/repository/gradle-plugins/'
+				credentials {
+					username = project.hasProperty('NEXUS_USERNAME') ? project.NEXUS_USERNAME : ''
+					password = project.hasProperty('NEXUS_PASSWORD') ? project.NEXUS_PASSWORD : ''
+				}
+			}
+		}
+	}
+
 	ext {
+		excludeGroup = [
+			'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA',
+			'META-INF/LICENSE*', 'META-INF/DEPENDENCIES',
+			'META-INF/NOTICE*', 'META-INF/versions/**',
+			'META-INF/maven/**', 'Log4j*', '_EMPTY_',
+			'LICENSE.*', 'META-INF/*.kotlin_module',
+			'META-INF/services/**', 'META-INF/com.android.tools/**',
+			'module-info.class', 'licenses', 'kotlin'
+		]
+		
 		setMainManifestProps = { Manifest manifest->
 			manifest.attributes (
 					'Implementation-Title'        : "${projectName}",
@@ -116,9 +153,5 @@ subprojects {
 					'Implementation-Timestamp'    : new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
 					)
 		}
-	}
-	
-	tasks.withType(GenerateModuleMetadata) {
-		enabled = false
 	}
 }

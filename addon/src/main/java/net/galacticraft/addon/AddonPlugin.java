@@ -33,22 +33,19 @@ import org.gradle.api.initialization.Settings;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.PluginManager;
-import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.jvm.toolchain.JavaLanguageVersion;
 import org.jetbrains.annotations.NotNull;
 
+import net.galacticraft.addon.publish.AddonPublishingPlugin;
 import net.galacticraft.addon.task.GalacticraftVersionTask;
 import net.galacticraft.addon.task.ListAvailableVersionsTask;
 import net.galacticraft.addon.util.StringBuild;
-import net.galacticraft.gradle.core.model.maven.MavenModel;
 import net.galacticraft.gradle.core.plugin.GradlePlugin;
-import net.galacticraft.gradle.core.plugin.TeamGC;
+import net.galacticraft.gradle.core.plugin.TeamConstants;
 import net.galacticraft.gradle.core.plugin.property.BooleanProperty;
-import net.galacticraft.gradle.core.plugin.property.StringProperty;
 import net.galacticraft.gradle.core.project.GalacticProject;
 import net.galacticraft.gradle.core.util.MavenDependency;
-import net.galacticraft.gradle.core.version.Version;
 import net.minecraftforge.gradle.common.util.MinecraftExtension;
 import net.minecraftforge.gradle.userdev.DependencyManagementExtension;
 import net.minecraftforge.gradle.userdev.UserDevPlugin;
@@ -57,8 +54,7 @@ import wtf.gofancy.fancygradle.FancyGradle;
 
 public class AddonPlugin extends GradlePlugin
 {
-	private final GalacticProject	GC_LEGACY				= TeamGC.Projects.GALACTICRAFT_LEGACY;
-	private final MavenModel		GC_LEGACY_MAVEN_MODEL	= GC_LEGACY.getMavenModel();
+	private final GalacticProject GC_LEGACY = TeamConstants.Projects.GALACTICRAFT_LEGACY;
 
 	private BooleanProperty	debug;
 	private BooleanProperty	applyForgeGradle;
@@ -68,33 +64,43 @@ public class AddonPlugin extends GradlePlugin
 	@Override
 	protected void applyToSettings(@NotNull Settings target, @NotNull PluginManager plugins)
 	{
-		target.pluginManagement(pluginManagement ->
-		{
-			pluginManagement.getRepositories().maven(TeamGC.Repositories.Groups.gradle);
-		});
+	    target.getPluginManagement().repositories(manager -> {
+	        manager.maven(TeamConstants.Repositories.Groups.gradle);
+	    });
+	}
+	
+	private String getVersion()
+	{
+	    try
+        {
+            return TeamConstants.version(this).toString();
+        } catch (Exception e)
+        {
+            return "dev";
+        }
 	}
 
 	@Override
-	protected void applyToProject(@NotNull Project target, @NotNull PluginManager plugins, @NotNull TaskContainer tasks)
+	protected void applyToProject(@NotNull Project target, @NotNull PluginManager plugins)
 	{
 		debug = new BooleanProperty(target, "galactic.addon.debug", false);
-		applyForgeGradle = new BooleanProperty(target, "galactic.fg5", false);
+		applyForgeGradle = new BooleanProperty(target, "galactic.forgegradle", false);
 		applyFancyGradle = new BooleanProperty(target, "galactic.fancygradle", true);
 		addDependencies = new BooleanProperty(target, "galactic.dependencies", true);
 
+		BooleanProperty publishing = new BooleanProperty(target, "galactic.addon.publish", false);
+		
+		if(publishing.isTrue())
+		{
+			plugins.apply(AddonPublishingPlugin.class);
+		}
+		
 		conditionalLog.setConditional(debug);
 
-		String version;
-		try
-		{
-			version = TeamGC.version(this).toString();
-		} catch (Exception e)
-		{
-			version = "Development";
-		}
+		GC_LEGACY.setLogger(this.conditionalLog);
 
 		conditionalLog.lifecycle("GalacticGradle Plugin Toolset");
-		conditionalLog.lifecycle("  -> Addon Plugin: v" + version);
+		conditionalLog.lifecycle("  -> Addon Plugin: v" + this.getVersion());
 
 		AddonExtension extension = extensions.findOrCreate("galacticraft", AddonExtension.class, target.getObjects());
 
@@ -105,27 +111,27 @@ public class AddonPlugin extends GradlePlugin
 			toolchain.getLanguageVersion().set(JavaLanguageVersion.of(8));
 		});
 
-		tasks.register("listAvailableVersions", ListAvailableVersionsTask.class, task ->
+		tasks.registerTask("listAvailableVersions", ListAvailableVersionsTask.class, task ->
 		{
 			task.getGalacticProject().set(GC_LEGACY);
-			task.setGroup("galacticgradle");
+			task.setGroup(TeamConstants.Properties.TASK_GROUP_NAME);
 			task.setDescription("Shows all available Galacticraft-Legacy Versions");
 		});
 
-		TaskProvider<GalacticraftVersionTask> versionTask = tasks.register("showVersion", GalacticraftVersionTask.class, task ->
+		TaskProvider<GalacticraftVersionTask> versionTask = tasks.registerTask("showVersion", GalacticraftVersionTask.class, task ->
 		{
-			task.setGroup("galacticgradle");
-			task.setDescription("Shows the Galacticraft-Legacy Version");
+			task.setGroup(TeamConstants.Properties.TASK_GROUP_NAME);
+			task.setDescription("Shows the Galacticraft-Legacy Version in use");
 		});
 
 		if (applyForgeGradle.isTrue())
 		{
 			plugins.apply(UserDevPlugin.class);
 		}
-		
-		MavenArtifactRepository repo = repositories.addMaven(TeamGC.Repositories.Groups.legacy);
-		GC_LEGACY_MAVEN_MODEL.addRepositoryUrl(repo.getUrl());
-		
+
+		MavenArtifactRepository repo = repositories.addMaven(TeamConstants.Repositories.Groups.legacy);
+		GC_LEGACY.setRepositoryUrl(repo.getUrl());
+
 		target.getGradle().afterProject(p ->
 		{
 			if (checkProperties(versionTask, extension))
@@ -157,9 +163,8 @@ public class AddonPlugin extends GradlePlugin
 	{
 		BooleanProperty	useLatest	= new BooleanProperty(extension.getUseLatestRelease());
 		BooleanProperty	useSnapshot	= new BooleanProperty(extension.getUseLatestSnapshot());
-		StringProperty	version		= new StringProperty(extension.getVersion());
 
-		if (useLatest.isFalse() && useSnapshot.isFalse() && version.equals(Version.Null().toString(), false))
+		if (useLatest.isFalse() && useSnapshot.isFalse() && !extension.getVersion().isPresent())
 		{
 			//@noformat
 			StringBuild string = StringBuild.start();
@@ -176,7 +181,7 @@ public class AddonPlugin extends GradlePlugin
 				.ln()
 				.appendln("#############################################################");
 
-			conditionalLog.error(string.toString());
+			lifecycle(string.toString());
 			//@format
 			addGalacticraftVersionTask(task, extension);
 			return false;
@@ -188,30 +193,38 @@ public class AddonPlugin extends GradlePlugin
 	private void handleGradleProperties(AddonExtension extension)
 	{
 		if (!extension.getVersion().isPresent())
-			if (extension.getUseLatestSnapshot().isPresent())
-				if (extension.getUseLatestRelease().isPresent())
+			if (extension.getUseLatestSnapshot().get().equals(true))
+				if (extension.getUseLatestRelease().get().equals(true))
 				{
 					error("Cannot use 'latestSnapshot()' with 'latestRelease()'");
 					return;
 				} else
-					extension.getVersion().set(GC_LEGACY.getMavenModel().readLatestSnapshot().toString());
+				{
+					conditionalLog.lifecycle("readLatestSnapshot() = " + GC_LEGACY.readLatestSnapshot().toString());
+					extension.getVersion().set(GC_LEGACY.readLatestSnapshot().toString());
+				}
 
 		if (!extension.getVersion().isPresent())
-			if (extension.getUseLatestRelease().isPresent())
-				if (extension.getUseLatestSnapshot().isPresent())
+			if (extension.getUseLatestRelease().get().equals(true))
+				if (extension.getUseLatestSnapshot().get().equals(true))
 				{
 					error("Cannot use 'latestRelease()' with 'latestSnapshot()'");
 					return;
 				} else
-					extension.getVersion().set(GC_LEGACY.getMavenModel().readLatestRelease().toString());
+				{
+					conditionalLog.lifecycle("readLatestRelease() = " + GC_LEGACY.readLatestRelease().toString());
+					extension.getVersion().set(GC_LEGACY.readLatestRelease().toString());
+				}
 	}
+	
+	
 
 	private void addGalacticraftDependency(Project target, AddonExtension extension)
 	{
 		if (debug.isTrue())
 			conditionalLog.lifecycle("-> Using Galacticraft-Legacy Version: " + extension.getVersion().get());
 
-		GC_LEGACY.getMavenModel().setVersion(extension.getVersion().get());
+		GC_LEGACY.setVersion(extension.getVersion().get());
 		DependencySet		dependencySet		= target.getConfigurations().getByName(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME).getAllDependencies();
 		Dependency			gcDependencyDeobf	= target.getDependencies().create(GC_LEGACY.toDependencyNotation() + ":deobf");
 		MinecraftExtension	minecraft			= extensions.find(MinecraftExtension.class);
@@ -241,10 +254,10 @@ public class AddonPlugin extends GradlePlugin
 		DependencySet dependencySet = target.getConfigurations().getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME).getAllDependencies();
 		if (debug.isTrue())
 		{
-			int count = GC_LEGACY.getMavenModel().getDependencies().size();
+			int count = GC_LEGACY.getDependencies().size();
 			conditionalLog.lifecycle("-> Importing " + count + " Required Dependencies for Galacticraft");
 		}
-		for (MavenDependency dependency : GC_LEGACY.getMavenModel().getDependencies())
+		for (MavenDependency dependency : GC_LEGACY.getDependencies())
 		{
 			Dependency compileDep = target.getDependencies().create(dependency.toDependencyNotation());
 			if (!dependencySet.contains(compileDep))
