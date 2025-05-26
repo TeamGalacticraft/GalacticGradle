@@ -1,7 +1,7 @@
 version = '1.0.1'
 
 dependencies {
-	suite(libs.galactic.core) { changing = true }
+	suite(project(":core"))/* { changing = true }*/
 	implementation libs.jgit
 	implementation libs.markdowngen
 	implementation libs.commons.text

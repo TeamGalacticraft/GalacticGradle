@@ -94,24 +94,24 @@ subprojects {
 	
 	apply from: '../gradle/script.jacoco.gradle'
 
-	def srcFolder = file("C:\\gradle\\gradle-${project.gradle.gradleVersion}\\src")
-
-	eclipse {
-		classpath {
-			file {
-				whenMerged { classpath ->
-					String version = project.gradle.gradleVersion
-					String gradleSourceDirectory = srcFolder.getAbsolutePath()
-					classpath.entries.each { entry ->
-						if (entry in AbstractLibrary && entry.library.path.contains('generated-gradle-jars')) {
-							entry.sourcePath =
-									new FileReferenceFactory().fromPath(gradleSourceDirectory)
-						}
-					}
-				}
-			}
-		}
-	}
+//	def srcFolder = file("C:\\gradle\\gradle-${project.gradle.gradleVersion}\\src")
+//
+//	eclipse {
+//		classpath {
+//			file {
+//				whenMerged { classpath ->
+//					String version = project.gradle.gradleVersion
+//					String gradleSourceDirectory = srcFolder.getAbsolutePath()
+//					classpath.entries.each { entry ->
+//						if (entry in AbstractLibrary && entry.library.path.contains('generated-gradle-jars')) {
+//							entry.sourcePath =
+//									new FileReferenceFactory().fromPath(gradleSourceDirectory)
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
 
 	checkLicenseMain.dependsOn licenseFormat
 
@@ -125,7 +125,7 @@ subprojects {
 		repositories {
 			maven {
 				name 'GCGradlePlugins'
-				url 'https://maven.galacticraft.net/repository/gradle-plugins/'
+				url 'https://repo.terradevelopment.net/repository/maven-releases/'
 				credentials {
 					username = project.hasProperty('NEXUS_USERNAME') ? project.NEXUS_USERNAME : ''
 					password = project.hasProperty('NEXUS_PASSWORD') ? project.NEXUS_PASSWORD : ''

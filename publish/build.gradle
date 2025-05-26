@@ -2,7 +2,7 @@ version = '1.0.0'
 group = "net.galacticraft.publish"
 
 dependencies {
-	includedSuite(libs.galactic.core) { changing = true }
+	includedSuite(project(":core"))/* { changing = true }*/
 	
 	implementation project(":publish-curseforge")
 	implementation project(":publish-modrinth")
@@ -12,9 +12,9 @@ dependencies {
 }
 
 jar {
-	from(configurations.includedSuite.collect { it.isDirectory() ? it : zipTree(it) }) {
-		exclude excludeGroup
-	}
+//	from(configurations.includedSuite.collect { it.isDirectory() ? it : zipTree(it) }) {
+//		exclude excludeGroup
+//	}
 
 	manifest(setMainManifestProps)
 }

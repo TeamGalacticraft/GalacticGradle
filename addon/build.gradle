@@ -1,7 +1,7 @@
 version = '1.0.8'
 
 dependencies {
-	includedSuite(libs.galactic.core) { changing = true }
+	includedSuite(project(":core"))/* { changing = true }*/
 	includedSuite libs.forge.gradle
 	includedSuite libs.fancy.gradle
 
@@ -9,9 +9,9 @@ dependencies {
 }
 
 jar {
-	from(configurations.includedSuite.collect { it.isDirectory() ? it : zipTree(it) }) {
-		exclude excludeGroup
-	}
+//	from(configurations.includedSuite.collect { it.isDirectory() ? it : zipTree(it) }) {
+//		exclude excludeGroup
+//	}
 
 	manifest(setMainManifestProps)
 	duplicatesStrategy 'exclude'

@@ -1,7 +1,7 @@
 version = '1.0.0'
 
 dependencies {
-	suite(libs.galactic.core) { changing = true }
+	suite(project(":core"))/* { changing = true }*/
 	implementation libs.guava
 
 	testImplementation project(":testing")

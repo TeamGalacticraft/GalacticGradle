@@ -1,28 +1,40 @@
 pluginManagement {
     repositories {
-		maven { url = 'https://maven.galacticraft.net/repository/gradle/' }
+		gradlePluginPortal()
+		mavenCentral()
+//		maven { url = 'https://maven.galacticraft.net/repository/gradle/' }
+		maven {
+			url 'https://maven.gofancy.wtf/releases'
+		}
     }
 }
 
 dependencyResolutionManagement {
 	repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 	repositories {
-		maven { 
-			url 'https://maven.galacticraft.net/repository/maven-public/' 
-		}
+		gradlePluginPortal()
+		mavenCentral()
+
 		maven {
-			url = "https://maven.galacticraft.net/repository/gradle/"
-			content {
-				includeGroupByRegex 'net.galacticraft.*'
-				includeGroupByRegex 'net.minecraftforge.*'
-				includeGroupByRegex 'com.modrinth.*'
-				includeGroup 'wtf.gofancy.fancygradle'
-				includeGroup 'net.darkhax.curseforgegradle'
-			}
+			url 'https://maven.gofancy.wtf/releases'
 		}
+
+//		maven {
+//			url 'https://maven.galacticraft.net/repository/maven-public/'
+//		}
+//		maven {
+//			url = "https://maven.galacticraft.net/repository/gradle/"
+//			content {
+//				includeGroupByRegex 'net.galacticraft.*'
+//				includeGroupByRegex 'net.minecraftforge.*'
+//				includeGroupByRegex 'com.modrinth.*'
+//				includeGroup 'wtf.gofancy.fancygradle'
+//				includeGroup 'net.darkhax.curseforgegradle'
+//			}
+//		}
 		maven {
 			url = 'https://maven.minecraftforge.net'
-			content { includeGroup 'net.minecraftforge.gradle' }
+//			content { includeGroup 'net.minecraftforge.gradle' }
 		}
 		maven { 
 			url = 'https://jitpack.io'
